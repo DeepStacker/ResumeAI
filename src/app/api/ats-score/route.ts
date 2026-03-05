@@ -1,3 +1,4 @@
+import { callAI } from '@/lib/ai';
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
@@ -56,26 +57,13 @@ ${resume.substring(0, 3000)}
 ---
 `;
 
-        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${apiKey}`,
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                model: "google/gemma-3-4b-it:free",
-                temperature: 0.2,
-                max_tokens: 600,
-                messages: [{ role: 'user', content: prompt }],
-            }),
+        const aiResult = await callAI({
+            messages: [{ role: 'user', content: prompt }],
+            temperature: 0.2,
+            max_tokens: 600,
         });
 
-        if (!response.ok) {
-            return NextResponse.json({ error: 'ATS analysis failed' }, { status: 500 });
-        }
-
-        const data = await response.json();
-        let content = data.choices?.[0]?.message?.content?.trim() || '';
+        let content = aiResult.content;
         content = content.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '');
 
         try {

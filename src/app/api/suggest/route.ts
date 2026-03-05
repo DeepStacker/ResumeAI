@@ -1,3 +1,4 @@
+import { callAI } from '@/lib/ai';
 import { NextResponse } from 'next/server';
 
 export async function POST(req: Request) {
@@ -35,28 +36,15 @@ export async function POST(req: Request) {
         const prompt = fieldPrompts[field];
         if (!prompt) return NextResponse.json({ suggestion: '' });
 
-        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${apiKey}`,
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                model: "google/gemma-3-4b-it:free",
-                temperature: 0.5,
-                max_tokens: 400,
-                messages: [
-                    { role: 'user', content: 'You are a concise career advisor. Give short, actionable suggestions. No explanations or preamble.\n\n' + prompt },
-                ],
-            }),
+        const aiResult = await callAI({
+            messages: [
+                { role: 'user', content: 'You are a concise career advisor. Give short, actionable suggestions. No explanations or preamble.\n\n' + prompt },
+            ],
+            temperature: 0.5,
+            max_tokens: 400,
         });
 
-        if (!response.ok) return NextResponse.json({ suggestion: '' });
-
-        const data = await response.json();
-        const suggestion = data.choices?.[0]?.message?.content?.trim() || '';
-
-        return NextResponse.json({ suggestion });
+        return NextResponse.json({ suggestion: aiResult.content });
     } catch {
         return NextResponse.json({ suggestion: '' });
     }

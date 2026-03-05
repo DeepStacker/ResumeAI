@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { FileText, Clock, Trash2, Coins, ArrowRight, Loader2, Plus, X, Eye, Share2 } from 'lucide-react';
+import { FileText, Clock, Trash2, Coins, ArrowRight, Loader2, Plus, X, Eye, Share2, Sparkles, Copy, Check } from 'lucide-react';
 import ResumePreview from '@/components/ResumePreview';
 
 interface ResumeItem {
@@ -34,6 +34,13 @@ export default function DashboardPage() {
   const [viewingResume, setViewingResume] = useState<string | null>(null);
   const [modalLoading, setModalLoading] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  // Cover letter modal state
+  const [clResumeId, setClResumeId] = useState<string | null>(null);
+  const [clJd, setClJd] = useState('');
+  const [clLoading, setClLoading] = useState(false);
+  const [clResult, setClResult] = useState<string | null>(null);
+  const [clCopied, setClCopied] = useState(false);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -95,6 +102,30 @@ export default function DashboardPage() {
       alert('Error loading resume.');
     } finally {
       setModalLoading(false);
+    }
+  };
+
+  const handleGenerateCoverLetter = async () => {
+    if (!clResumeId) return;
+    setClLoading(true);
+    try {
+      const res = await fetch(`/api/resumes/${clResumeId}/cover-letter`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jobDescription: clJd }),
+      });
+      const data = await res.json();
+      if (res.ok && data.coverLetter) {
+        setClResult(data.coverLetter);
+        setClResumeId(null); // close JD modal
+        fetchData(); // refresh credits
+      } else {
+        alert(data.error || 'Failed to generate cover letter.');
+      }
+    } catch {
+      alert('Network error. Please try again.');
+    } finally {
+      setClLoading(false);
     }
   };
 
@@ -178,6 +209,9 @@ export default function DashboardPage() {
                   <button className="share-badge" onClick={(e) => { e.stopPropagation(); const url = `${window.location.origin}/r/${resume.id}`; navigator.clipboard.writeText(url); setCopiedId(resume.id); setTimeout(() => setCopiedId(null), 2000); }} title="Copy share link">
                     <Share2 size={12} /> {copiedId === resume.id ? 'Copied!' : 'Share'}
                   </button>
+                  <button className="share-badge" style={{ background: 'rgba(139, 92, 246, 0.1)', color: 'var(--accent)' }} onClick={(e) => { e.stopPropagation(); setClResumeId(resume.id); setClJd(''); }} title="Generate cover letter">
+                    <Sparkles size={12} /> Cover Letter
+                  </button>
                   <button className="btn-icon" onClick={(e) => { e.stopPropagation(); handleDelete(resume.id); }} title="Delete" style={{ color: 'var(--error)', background: 'rgba(239, 68, 68, 0.1)', padding: '0.5rem', borderRadius: 'var(--radius-sm)' }}>
                     <Trash2 size={16} />
                   </button>
@@ -228,6 +262,64 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
-    </div>
+
+      {/* Cover Letter JD Input Modal */}
+      {clResumeId && (
+        <div className="resume-modal-overlay">
+          <div className="resume-modal-content" style={{ maxWidth: '550px', padding: '2rem' }}>
+            <button className="resume-modal-close" onClick={() => setClResumeId(null)} type="button"><X size={20} /></button>
+            <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', color: 'var(--accent)' }}>
+              <Sparkles size={20} /> Generate Cover Letter
+            </h3>
+            <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
+              Paste a job description below to generate a tailored cover letter based on your saved resume.
+            </p>
+            <textarea
+              value={clJd}
+              onChange={e => setClJd(e.target.value)}
+              className="input-field jd-textarea"
+              rows={8}
+              placeholder="Paste the job description here (optional)..."
+              style={{ width: '100%', marginBottom: '1rem' }}
+            />
+            <button
+              onClick={handleGenerateCoverLetter}
+              disabled={clLoading}
+              className="btn-primary full-width"
+              style={{ justifyContent: 'center' }}
+            >
+              {clLoading ? <><Loader2 size={16} className="spin-icon" /> Generating...</> : <><Sparkles size={16} /> Generate (2 credits)</>}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Cover Letter Result Modal */}
+      {clResult && (
+        <div className="resume-modal-overlay">
+          <div className="resume-modal-content" style={{ maxWidth: '650px', padding: '2rem' }}>
+            <button className="resume-modal-close" onClick={() => { setClResult(null); setClCopied(false); }} type="button"><X size={20} /></button>
+            <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', color: 'var(--accent)' }}>
+              <Sparkles size={20} /> Your Cover Letter
+            </h3>
+            <div style={{ maxHeight: '400px', overflowY: 'auto', marginBottom: '1rem' }}>
+              <textarea
+                value={clResult}
+                onChange={e => setClResult(e.target.value)}
+                className="input-field"
+                rows={16}
+                style={{ width: '100%', lineHeight: '1.7', fontSize: '0.95rem' }}
+              />
+            </div>
+            <button
+              onClick={() => { navigator.clipboard.writeText(clResult); setClCopied(true); setTimeout(() => setClCopied(false), 2000); }}
+              className="btn-primary full-width"
+              style={{ justifyContent: 'center' }}
+            >
+              {clCopied ? <><Check size={16} /> Copied!</> : <><Copy size={16} /> Copy to Clipboard</>}
+            </button>
+          </div>
+        </div>
+      )}    </div>
   );
 }

@@ -1,3 +1,4 @@
+import { callAI } from '@/lib/ai';
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
@@ -39,28 +40,13 @@ Original Bullets:
 ${entry.bullets.join('\n')}
 `;
 
-        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${apiKey}`,
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                model: "google/gemma-3-4b-it:free",
-                temperature: 0.4,
-                max_tokens: 500,
-                messages: [{ role: 'user', content: prompt }],
-            }),
+        const aiResult = await callAI({
+            messages: [{ role: 'user', content: prompt }],
+            temperature: 0.4,
+            max_tokens: 500,
         });
 
-        if (!response.ok) {
-            const errText = await response.text();
-            console.error('Bullet rewrite failed:', errText);
-            return NextResponse.json({ error: 'Failed to rewrite bullets.' }, { status: 500 });
-        }
-
-        const data = await response.json();
-        let content = data.choices?.[0]?.message?.content?.trim() || '';
+        let content = aiResult.content;
         content = content.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '');
 
         try {

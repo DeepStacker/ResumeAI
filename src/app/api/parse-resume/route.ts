@@ -1,3 +1,4 @@
+import { callAI } from '@/lib/ai';
 import { NextResponse } from 'next/server';
 import { extractText } from 'unpdf';
 import mammoth from 'mammoth';
@@ -125,28 +126,13 @@ ${text.substring(0, 5000)}
 ---
 `;
 
-        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${apiKey}`,
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                model: "google/gemma-3-4b-it:free",
-                temperature: 0.0,
-                max_tokens: 3000,
-                messages: [{ role: 'user', content: parsePrompt }],
-            }),
+        const aiResult = await callAI({
+            messages: [{ role: 'user', content: parsePrompt }],
+            temperature: 0.0,
+            max_tokens: 3000,
         });
 
-        if (!response.ok) {
-            const errText = await response.text();
-            console.error('Parse API error:', errText);
-            return NextResponse.json({ error: 'Failed to parse with AI' }, { status: 500 });
-        }
-
-        const data = await response.json();
-        let content = data.choices?.[0]?.message?.content?.trim() || '';
+        let content = aiResult.content;
 
         // Aggressively match only the JSON payload 
         const jsonMatch = content.match(/\{[\s\S]*\}/);

@@ -1,3 +1,4 @@
+import { callAI } from '@/lib/ai';
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
@@ -121,28 +122,18 @@ STRICT RULES:
 8. Output ONLY Markdown, no explanations
 `;
 
-        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${apiKey}`,
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                model: "google/gemma-3-4b-it:free",
+        let resume: string;
+        try {
+            const aiResult = await callAI({
+                messages: [{ role: 'user', content: prompt }],
                 temperature: 0.3,
                 max_tokens: 2500,
-                messages: [{ role: 'user', content: prompt }],
-            }),
-        });
-
-        if (!response.ok) {
-            const errText = await response.text();
-            console.error('OpenRouter API Error:', errText);
-            return NextResponse.json({ error: 'Failed to generate resume' }, { status: response.status });
+            });
+            resume = aiResult.content;
+        } catch (aiErr: any) {
+            console.error('AI call failed:', aiErr.message);
+            return NextResponse.json({ error: aiErr.message || 'All AI models are currently unavailable. Please try again later.' }, { status: 503 });
         }
-
-        const data = await response.json();
-        const resume = data.choices?.[0]?.message?.content;
 
         if (!resume) {
             return NextResponse.json({ error: 'AI returned an empty response. Credits were NOT charged. Please try again.' }, { status: 500 });
@@ -169,8 +160,6 @@ STRICT RULES:
             console.log(`Saved new resume for user ${userId}`);
         } catch (dbErr) {
             console.error('Failed to save generated resume to database:', dbErr);
-            // We still return the resume to the user even if DB save fails, 
-            // but we log the error for debugging.
         }
 
         return NextResponse.json({ resume });

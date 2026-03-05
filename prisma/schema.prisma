@@ -19,6 +19,7 @@ model User {
   sessions      Session[]
   transactions  Transaction[]
   resumes       Resume[]
+  atsScores     AtsScore[]
 
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -80,5 +81,22 @@ model Resume {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  atsScores AtsScore[]
 }
+
+model AtsScore {
+  id          String   @id @default(cuid())
+  resumeId    String
+  userId      String
+  score       Int
+  jdSnippet   String?  @db.Text
+  matched     Json?
+  missing     Json?
+  suggestions Json?
+  createdAt   DateTime @default(now())
+
+  resume      Resume   @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+

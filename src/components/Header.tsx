@@ -10,6 +10,7 @@ import { useSession } from 'next-auth/react';
 const NAV_ITEMS = [
   { href: '/builder', label: 'Builder' },
   { href: '/dashboard', label: 'My Resumes' },
+  { href: '/ats-tracker', label: 'ATS Tracker' },
   { href: '/profile', label: 'Profile' },
 ];
 
