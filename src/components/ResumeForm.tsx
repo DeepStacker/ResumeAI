@@ -4,12 +4,10 @@ import React, { useState, useCallback, useRef } from 'react';
 import {
   Briefcase, User, MapPin, GraduationCap, Code, FileText, Send, Upload,
   Sparkles, ChevronRight, ChevronLeft, X, Check, Loader2, Plus, Trash2,
-  Globe, Mail, Phone, Linkedin, Github, Target, ClipboardList, Languages, Award
+  Globe, Mail, Phone, Linkedin, Github, Target, ClipboardList, Languages, Award, RefreshCcw
 } from 'lucide-react';
-import {
-  ResumeData, ResumeTemplate, WorkEntry, ProjectEntry, EducationEntry,
-  createWorkEntry, createProjectEntry, createEducationEntry, emptyResumeData
-} from '@/types/resume';
+import { ResumeData, ResumeTemplate, WorkEntry, ProjectEntry, EducationEntry } from '@/types/resume';
+import { useResumeStore } from '@/store/useResumeStore';
 
 interface ResumeFormProps {
   onSubmit: (data: ResumeData) => void;
@@ -34,8 +32,10 @@ const TEMPLATES: { id: ResumeTemplate; name: string; desc: string }[] = [
 ];
 
 export default function ResumeForm({ onSubmit, isLoading }: ResumeFormProps) {
-  const [step, setStep] = useState(0);
-  const [data, setData] = useState<ResumeData>(emptyResumeData);
+  const store = useResumeStore();
+  const data = store.data;
+  const step = store.step;
+  const setStep = store.setStep;
 
   // AI suggestions
   const [suggestions, setSuggestions] = useState<Record<string, string>>({});
@@ -43,74 +43,29 @@ export default function ResumeForm({ onSubmit, isLoading }: ResumeFormProps) {
   const [summaryLoading, setSummaryLoading] = useState(false);
   const debounceTimers = useRef<Record<string, NodeJS.Timeout>>({});
 
+  // Cover letter state
+  const [coverLetter, setCoverLetter] = useState<string | null>(null);
+  const [coverLetterLoading, setCoverLetterLoading] = useState(false);
+  const [bulletLoading, setBulletLoading] = useState<string | null>(null);
+
+  // Custom modal state
+  const [showConfirmReset, setShowConfirmReset] = useState(false);
+
   // Upload
   const [isUploading, setIsUploading] = useState(false);
   const [uploadMsg, setUploadMsg] = useState<string | null>(null);
   const [uploadedFile, setUploadedFile] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  // Skill input
+  // Skill input local states
   const [skillInput, setSkillInput] = useState('');
   const [certInput, setCertInput] = useState('');
   const [langInput, setLangInput] = useState('');
 
   // --- Helpers ---
-  const updatePersonal = (field: string, value: string) => {
-    setData(d => ({ ...d, personal: { ...d.personal, [field]: value } }));
-  };
-
-  const updateField = (field: keyof ResumeData, value: unknown) => {
-    setData(d => ({ ...d, [field]: value }));
-  };
-
-  // --- Skills ---
-  const addChip = (arr: string[], setArr: (v: string[]) => void, input: string, setInput: (v: string) => void) => {
-    const trimmed = input.trim();
-    if (!trimmed) return;
-    if (!arr.some(s => s.toLowerCase() === trimmed.toLowerCase())) {
-      setArr([...arr, trimmed]);
-    }
+  const handleAddChip = (field: 'skills' | 'certifications' | 'languages', input: string, setInput: (v: string) => void) => {
+    store.addChip(field, input);
     setInput('');
-  };
-
-  const removeChip = (arr: string[], setArr: (v: string[]) => void, idx: number) => {
-    setArr(arr.filter((_, i) => i !== idx));
-  };
-
-  // --- Work Entries ---
-  const addWorkEntry = () => updateField('experience', [...data.experience, createWorkEntry()]);
-  const removeWorkEntry = (id: string) => updateField('experience', data.experience.filter(e => e.id !== id));
-  const updateWork = (id: string, field: keyof WorkEntry, value: unknown) => {
-    updateField('experience', data.experience.map(e => e.id === id ? { ...e, [field]: value } : e));
-  };
-  const addBullet = (id: string) => {
-    updateField('experience', data.experience.map(e =>
-      e.id === id ? { ...e, bullets: [...e.bullets, ''] } : e
-    ));
-  };
-  const updateBullet = (entryId: string, bulletIdx: number, value: string) => {
-    updateField('experience', data.experience.map(e =>
-      e.id === entryId ? { ...e, bullets: e.bullets.map((b, i) => i === bulletIdx ? value : b) } : e
-    ));
-  };
-  const removeBullet = (entryId: string, bulletIdx: number) => {
-    updateField('experience', data.experience.map(e =>
-      e.id === entryId ? { ...e, bullets: e.bullets.filter((_, i) => i !== bulletIdx) } : e
-    ));
-  };
-
-  // --- Project Entries ---
-  const addProject = () => updateField('projects', [...data.projects, createProjectEntry()]);
-  const removeProject = (id: string) => updateField('projects', data.projects.filter(p => p.id !== id));
-  const updateProject = (id: string, field: keyof ProjectEntry, value: string) => {
-    updateField('projects', data.projects.map(p => p.id === id ? { ...p, [field]: value } : p));
-  };
-
-  // --- Education Entries ---
-  const addEdu = () => updateField('education', [...data.education, createEducationEntry()]);
-  const removeEdu = (id: string) => updateField('education', data.education.filter(e => e.id !== id));
-  const updateEdu = (id: string, field: keyof EducationEntry, value: string) => {
-    updateField('education', data.education.map(e => e.id === id ? { ...e, [field]: value } : e));
   };
 
   // --- AI Suggestions ---
@@ -132,10 +87,13 @@ export default function ResumeForm({ onSubmit, isLoading }: ResumeFormProps) {
     const s = suggestions[field];
     if (!s) return;
     if (field === 'skills') {
-      const newSkills = s.split(',').map(sk => sk.trim()).filter(sk => sk);
-      updateField('skills', [...new Set([...data.skills, ...newSkills])]);
+      const newSkills = s.split(',').map(sk => sk.trim()).filter(Boolean);
+      newSkills.forEach(sk => store.addChip('skills', sk));
     } else if (field === 'summary') {
-      updateField('summary', s);
+      store.updateField('summary', s);
+    } else if (field === 'targetRoleIdeation') {
+      applyTargetRoleSuggestion();
+      return; // custom handler
     }
     dismissSuggestion(field);
   };
@@ -163,18 +121,168 @@ export default function ResumeForm({ onSubmit, isLoading }: ResumeFormProps) {
         }),
       });
       const result = await res.json();
-      if (result.suggestion) updateField('summary', result.suggestion);
+      if (result.suggestion) store.updateField('summary', result.suggestion);
     } catch { /* silent */ }
     setSummaryLoading(false);
   };
 
   // Debounced skill suggestion
-  const onSkillsChange = (newSkills: string[]) => {
-    updateField('skills', newSkills);
-    const val = newSkills.join(', ');
+  const onSkillsChange = () => {
+    const val = data.skills.join(', ');
     if (val.length > 10) {
       if (debounceTimers.current['skills']) clearTimeout(debounceTimers.current['skills']);
       debounceTimers.current['skills'] = setTimeout(() => fetchSuggestion('skills', val), 2000);
+    }
+  };
+
+  const handleRewriteBullets = async (entryId: string, entry: WorkEntry) => {
+    if (!entry.bullets || entry.bullets.length === 0 || entry.bullets.every(b => b.trim() === '')) return;
+    setBulletLoading(entryId);
+    try {
+      const res = await fetch('/api/rewrite-bullets', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ entry, targetRole: data.targetRole }),
+      });
+      const result = await res.json();
+      if (result.bullets) {
+        // Clear existing bullets and add rewritten ones
+        for (let i = entry.bullets.length - 1; i >= 0; i--) {
+          store.removeBullet(entryId, i);
+        }
+        result.bullets.forEach((b: string, i: number) => {
+          if (i === 0) {
+             store.addBullet(entryId);
+             store.updateBullet(entryId, 0, b);
+          } else {
+             store.addBullet(entryId);
+             store.updateBullet(entryId, i, b);
+          }
+        });
+        // cleanup if addBullet adds empty ones
+        const updated = store.data.experience.find(e => e.id === entryId);
+        if (updated) {
+          updated.bullets.forEach((b, i) => {
+            if (b.trim() === '' && i < result.bullets.length) {
+              store.updateBullet(entryId, i, result.bullets[i]);
+            }
+          });
+        }
+      } else if (result.error) {
+         alert(result.error);
+      }
+    } catch { 
+       alert('Failed to rewrite bullets.');
+    } finally {
+      setBulletLoading(null);
+    }
+  };
+
+  const handleGenerateRoleBullets = async (entryId: string, jobTitle: string) => {
+    if (!jobTitle) return;
+    setBulletLoading(entryId + '_generate');
+    try {
+      const res = await fetch('/api/suggest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ field: 'roleBullets', value: jobTitle, target_role: data.targetRole }),
+      });
+      const result = await res.json();
+      if (result.suggestion) {
+         const newBullets = result.suggestion.split('\n').map((b: string) => b.replace(/^[-*•▸]\s*/, '').trim()).filter(Boolean);
+         
+         // Only replace empty bullets or add new ones
+         const entry = data.experience.find(e => e.id === entryId);
+         if (entry) {
+             let currentBulletIndex = 0;
+             newBullets.forEach((bulletText: string) => {
+                 // Try to fill in empty existing bullets first
+                 while (currentBulletIndex < entry.bullets.length && entry.bullets[currentBulletIndex].trim() !== '') {
+                     currentBulletIndex++;
+                 }
+                 if (currentBulletIndex < entry.bullets.length) {
+                     store.updateBullet(entryId, currentBulletIndex, bulletText);
+                     currentBulletIndex++;
+                 } else {
+                     // create new bullet
+                     store.addBullet(entryId);
+                     setTimeout(() => {
+                        // slight hack because state needs to propagate before update
+                         try { store.updateBullet(entryId, entry.bullets.length, bulletText); } catch {}
+                     }, 50);
+                 }
+             });
+         }
+      }
+    } catch { 
+       alert('Failed to generate bullet ideas.');
+    } finally {
+      setBulletLoading(null);
+    }
+  };
+
+  const handleRewriteProjectDesc = async (projId: string, desc: string) => {
+    if (!desc) return;
+    setLoadingSuggestion(projId);
+    try {
+      const res = await fetch('/api/suggest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ field: 'projectDesc', value: desc, target_role: data.targetRole }),
+      });
+      const result = await res.json();
+      if (result.suggestion) {
+         store.updateProject(projId, 'description', result.suggestion);
+      }
+    } catch { /* silent */ }
+    setLoadingSuggestion(null);
+  };
+
+  const handleSuggestTargetRoles = async () => {
+    setLoadingSuggestion('targetRoleIdeation');
+    try {
+      const expSum = data.experience.map(e => e.jobTitle).join(', ') + ' ' + data.skills.join(', ');
+      const res = await fetch('/api/suggest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ field: 'targetRoleIdeation', value: expSum || 'Entry Level' }),
+      });
+      const result = await res.json();
+      if (result.suggestion) {
+        setSuggestions(p => ({ ...p, targetRoleIdeation: result.suggestion }));
+      }
+    } catch { /* silent */ }
+    setLoadingSuggestion(null);
+  };
+  
+  const applyTargetRoleSuggestion = () => {
+    const s = suggestions['targetRoleIdeation'];
+    if (!s) return;
+    // Just take the first suggested title for simplicity 
+    const firstRole = s.split(',')[0].trim();
+    store.updateField('targetRole', firstRole);
+    dismissSuggestion('targetRoleIdeation');
+  };
+
+  const handleGenerateCoverLetter = async () => {
+    setCoverLetterLoading(true);
+    setCoverLetter(null);
+    try {
+      const res = await fetch('/api/cover-letter', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ resumeData: data, jobDescription: data.jobDescription }),
+      });
+      const result = await res.json();
+      if (result.coverLetter) {
+        setCoverLetter(result.coverLetter);
+      } else if (result.error) {
+        alert(result.error);
+      }
+    } catch {
+      alert('Failed to generate cover letter.');
+    } finally {
+      setCoverLetterLoading(false);
     }
   };
 
@@ -195,20 +303,19 @@ export default function ResumeForm({ onSubmit, isLoading }: ResumeFormProps) {
       const result = await res.json();
       if (result.parsed) {
         const p = result.parsed;
-        setData(d => ({
-          ...d,
+        store.setResumeData({
           personal: {
-            fullName: p.fullName || p.name || d.personal.fullName,
-            email: p.email || d.personal.email,
-            phone: p.phone || d.personal.phone,
-            location: p.location || d.personal.location,
-            linkedin: p.linkedin || d.personal.linkedin,
-            github: p.github || d.personal.github,
-            portfolio: p.portfolio || d.personal.portfolio,
+            fullName: p.fullName || p.name || data.personal.fullName,
+            email: p.email || data.personal.email,
+            phone: p.phone || data.personal.phone,
+            location: p.location || data.personal.location,
+            linkedin: p.linkedin || data.personal.linkedin,
+            github: p.github || data.personal.github,
+            portfolio: p.portfolio || data.personal.portfolio,
           },
-          summary: p.summary || d.summary,
-          targetRole: p.targetRole || p.target_role || d.targetRole,
-          skills: p.skills ? (Array.isArray(p.skills) ? p.skills : p.skills.split(',').map((s: string) => s.trim()).filter(Boolean)) : d.skills,
+          summary: p.summary || data.summary,
+          targetRole: p.targetRole || p.target_role || data.targetRole,
+          skills: p.skills ? (Array.isArray(p.skills) ? p.skills : p.skills.split(',').map((s: string) => s.trim()).filter(Boolean)) : data.skills,
           experience: p.experience && Array.isArray(p.experience) && p.experience.length > 0
             ? p.experience.map((e: any) => ({
                 id: crypto.randomUUID(),
@@ -219,7 +326,7 @@ export default function ResumeForm({ onSubmit, isLoading }: ResumeFormProps) {
                 endDate: e.endDate || '',
                 bullets: Array.isArray(e.bullets) ? e.bullets : (e.description ? [e.description] : ['']),
               }))
-            : d.experience,
+            : data.experience,
           projects: p.projects && Array.isArray(p.projects)
             ? p.projects.map((pr: any) => ({
                 id: crypto.randomUUID(),
@@ -228,7 +335,7 @@ export default function ResumeForm({ onSubmit, isLoading }: ResumeFormProps) {
                 description: pr.description || '',
                 link: pr.link || '',
               }))
-            : d.projects,
+            : data.projects,
           education: p.education && Array.isArray(p.education) && p.education.length > 0
             ? p.education.map((ed: any) => ({
                 id: crypto.randomUUID(),
@@ -237,10 +344,10 @@ export default function ResumeForm({ onSubmit, isLoading }: ResumeFormProps) {
                 year: ed.year || '',
                 gpa: ed.gpa || '',
               }))
-            : d.education,
-          certifications: p.certifications && Array.isArray(p.certifications) ? p.certifications : d.certifications,
-          languages: p.languages && Array.isArray(p.languages) ? p.languages : d.languages,
-        }));
+            : data.education,
+          certifications: p.certifications && Array.isArray(p.certifications) ? p.certifications : data.certifications,
+          languages: p.languages && Array.isArray(p.languages) ? p.languages : data.languages,
+        });
         setUploadMsg('✅ Resume parsed! Review each section below.');
         setStep(1);
       } else {
@@ -266,8 +373,8 @@ export default function ResumeForm({ onSubmit, isLoading }: ResumeFormProps) {
     onSubmit(data);
   };
 
-  const nextStep = () => setStep(s => Math.min(s + 1, STEPS.length - 1));
-  const prevStep = () => setStep(s => Math.max(s - 1, 0));
+  const nextStep = () => setStep(Math.min(step + 1, STEPS.length - 1));
+  const prevStep = () => setStep(Math.max(step - 1, 0));
 
   const canProceed = useCallback((s: number): boolean => {
     switch (s) {
@@ -300,6 +407,11 @@ export default function ResumeForm({ onSubmit, isLoading }: ResumeFormProps) {
       </div>
     );
   };
+
+  // We only show the UI after hydration is complete to avoid SSR mismatch with localStorage
+  const [mounted, setMounted] = useState(false);
+  React.useEffect(() => setMounted(true), []);
+  if (!mounted) return null;
 
   return (
     <div className="form-panel glass-panel animate-fade-in">
@@ -354,36 +466,36 @@ export default function ResumeForm({ onSubmit, isLoading }: ResumeFormProps) {
             <div className="form-grid">
               <div className="input-group">
                 <label className="input-label"><User size={14} /> Full Name <span className="required">*</span></label>
-                <input type="text" value={data.personal.fullName} onChange={e => updatePersonal('fullName', e.target.value)} className="input-field" placeholder="Jane Doe" required />
+                <input type="text" value={data.personal.fullName} onChange={e => store.updatePersonal('fullName', e.target.value)} className="input-field" placeholder="Jane Doe" required />
               </div>
               <div className="input-group">
                 <label className="input-label"><Mail size={14} /> Email <span className="required">*</span></label>
-                <input type="email" value={data.personal.email} onChange={e => updatePersonal('email', e.target.value)} className="input-field" placeholder="jane@example.com" />
+                <input type="email" value={data.personal.email} onChange={e => store.updatePersonal('email', e.target.value)} className="input-field" placeholder="jane@example.com" />
               </div>
             </div>
             <div className="form-grid">
               <div className="input-group">
                 <label className="input-label"><Phone size={14} /> Phone</label>
-                <input type="tel" value={data.personal.phone} onChange={e => updatePersonal('phone', e.target.value)} className="input-field" placeholder="+1 234 567 8900" />
+                <input type="tel" value={data.personal.phone} onChange={e => store.updatePersonal('phone', e.target.value)} className="input-field" placeholder="+1 234 567 8900" />
               </div>
               <div className="input-group">
                 <label className="input-label"><MapPin size={14} /> Location</label>
-                <input type="text" value={data.personal.location} onChange={e => updatePersonal('location', e.target.value)} className="input-field" placeholder="San Francisco, CA" />
+                <input type="text" value={data.personal.location} onChange={e => store.updatePersonal('location', e.target.value)} className="input-field" placeholder="San Francisco, CA" />
               </div>
             </div>
             <div className="form-grid">
               <div className="input-group">
                 <label className="input-label"><Linkedin size={14} /> LinkedIn</label>
-                <input type="url" value={data.personal.linkedin} onChange={e => updatePersonal('linkedin', e.target.value)} className="input-field" placeholder="linkedin.com/in/janedoe" />
+                <input type="url" value={data.personal.linkedin} onChange={e => store.updatePersonal('linkedin', e.target.value)} className="input-field" placeholder="linkedin.com/in/janedoe" />
               </div>
               <div className="input-group">
                 <label className="input-label"><Github size={14} /> GitHub</label>
-                <input type="url" value={data.personal.github} onChange={e => updatePersonal('github', e.target.value)} className="input-field" placeholder="github.com/janedoe" />
+                <input type="url" value={data.personal.github} onChange={e => store.updatePersonal('github', e.target.value)} className="input-field" placeholder="github.com/janedoe" />
               </div>
             </div>
             <div className="input-group">
               <label className="input-label"><Globe size={14} /> Portfolio / Website</label>
-              <input type="url" value={data.personal.portfolio} onChange={e => updatePersonal('portfolio', e.target.value)} className="input-field" placeholder="https://janedoe.dev" />
+              <input type="url" value={data.personal.portfolio} onChange={e => store.updatePersonal('portfolio', e.target.value)} className="input-field" placeholder="https://janedoe.dev" />
             </div>
           </div>
         )}
@@ -392,13 +504,19 @@ export default function ResumeForm({ onSubmit, isLoading }: ResumeFormProps) {
         {step === 2 && (
           <div className="step-content animate-fade-in">
             <div className="input-group">
-              <label className="input-label"><Target size={14} /> Target Job Title <span className="required">*</span></label>
-              <input type="text" value={data.targetRole} onChange={e => updateField('targetRole', e.target.value)} className="input-field" placeholder="Senior Software Engineer" required />
+              <div className="label-row">
+                <label className="input-label"><Target size={14} /> Target Job Title <span className="required">*</span></label>
+                <button type="button" onClick={handleSuggestTargetRoles} disabled={loadingSuggestion === 'targetRoleIdeation'} className="ai-autofill-btn" style={{ padding: '0.2rem 0.5rem', fontSize: '0.75rem' }}>
+                    {loadingSuggestion === 'targetRoleIdeation' ? <><Loader2 size={12} className="spin-icon" /> Analyzing...</> : <><Sparkles size={12} /> Suggest based on history</>}
+                </button>
+              </div>
+              <input type="text" value={data.targetRole} onChange={e => store.updateField('targetRole', e.target.value)} className="input-field" placeholder="Senior Software Engineer" required />
+              <SuggestionBubble field="targetRoleIdeation" />
               <p className="field-hint">AI uses this to tailor content and ATS keywords.</p>
             </div>
             <div className="input-group">
               <label className="input-label"><ClipboardList size={14} /> Job Description <span className="badge-optional">optional</span></label>
-              <textarea value={data.jobDescription} onChange={e => updateField('jobDescription', e.target.value)} className="input-field jd-textarea" rows={6} placeholder="Paste the full job description here for maximum ATS optimization..." />
+              <textarea value={data.jobDescription} onChange={e => store.updateField('jobDescription', e.target.value)} className="input-field jd-textarea" rows={6} placeholder="Paste the full job description here for maximum ATS optimization..." />
               <p className="field-hint">Pasting a JD lets AI extract keywords and score your resume against the role.</p>
             </div>
           </div>
@@ -411,14 +529,14 @@ export default function ResumeForm({ onSubmit, isLoading }: ResumeFormProps) {
               <label className="input-label"><Code size={14} /> Skills {loadingSuggestion === 'skills' && <Loader2 size={13} className="spin-icon inline-loader" />}</label>
               <div className="skill-input-row">
                 <input type="text" value={skillInput} onChange={e => setSkillInput(e.target.value)}
-                  onKeyDown={e => { if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); addChip(data.skills, v => onSkillsChange(v), skillInput, setSkillInput); } }}
+                  onKeyDown={e => { if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); handleAddChip('skills', skillInput, setSkillInput); onSkillsChange(); } }}
                   className="input-field" placeholder="Type a skill and press Enter" />
-                <button type="button" onClick={() => addChip(data.skills, v => onSkillsChange(v), skillInput, setSkillInput)} className="btn-icon"><Plus size={16} /></button>
+                <button type="button" onClick={() => { handleAddChip('skills', skillInput, setSkillInput); onSkillsChange(); }} className="btn-icon"><Plus size={16} /></button>
               </div>
               {data.skills.length > 0 && (
                 <div className="skill-chips">
                   {data.skills.map((s, i) => (
-                    <span key={i} className="skill-chip">{s}<button type="button" onClick={() => removeChip(data.skills, v => updateField('skills', v), i)} className="chip-remove"><X size={11} /></button></span>
+                    <span key={i} className="skill-chip">{s}<button type="button" onClick={() => store.removeChip('skills', i)} className="chip-remove"><X size={11} /></button></span>
                   ))}
                 </div>
               )}
@@ -435,31 +553,31 @@ export default function ResumeForm({ onSubmit, isLoading }: ResumeFormProps) {
                 <div className="entry-card-header">
                   <span className="entry-card-number">#{idx + 1}</span>
                   {data.experience.length > 1 && (
-                    <button type="button" onClick={() => removeWorkEntry(entry.id)} className="entry-remove-btn"><Trash2 size={14} /></button>
+                    <button type="button" onClick={() => store.removeWorkEntry(entry.id)} className="entry-remove-btn"><Trash2 size={14} /></button>
                   )}
                 </div>
                 <div className="form-grid">
                   <div className="input-group">
                     <label className="input-label-sm">Job Title</label>
-                    <input type="text" value={entry.jobTitle} onChange={e => updateWork(entry.id, 'jobTitle', e.target.value)} className="input-field" placeholder="Software Engineer" />
+                    <input type="text" value={entry.jobTitle} onChange={e => store.updateWork(entry.id, 'jobTitle', e.target.value)} className="input-field" placeholder="Software Engineer" />
                   </div>
                   <div className="input-group">
                     <label className="input-label-sm">Company</label>
-                    <input type="text" value={entry.company} onChange={e => updateWork(entry.id, 'company', e.target.value)} className="input-field" placeholder="Google" />
+                    <input type="text" value={entry.company} onChange={e => store.updateWork(entry.id, 'company', e.target.value)} className="input-field" placeholder="Google" />
                   </div>
                 </div>
                 <div className="form-grid form-grid-3">
                   <div className="input-group">
                     <label className="input-label-sm">Location</label>
-                    <input type="text" value={entry.location} onChange={e => updateWork(entry.id, 'location', e.target.value)} className="input-field" placeholder="Mountain View, CA" />
+                    <input type="text" value={entry.location} onChange={e => store.updateWork(entry.id, 'location', e.target.value)} className="input-field" placeholder="Mountain View, CA" />
                   </div>
                   <div className="input-group">
                     <label className="input-label-sm">Start</label>
-                    <input type="text" value={entry.startDate} onChange={e => updateWork(entry.id, 'startDate', e.target.value)} className="input-field" placeholder="Jan 2022" />
+                    <input type="text" value={entry.startDate} onChange={e => store.updateWork(entry.id, 'startDate', e.target.value)} className="input-field" placeholder="Jan 2022" />
                   </div>
                   <div className="input-group">
                     <label className="input-label-sm">End</label>
-                    <input type="text" value={entry.endDate} onChange={e => updateWork(entry.id, 'endDate', e.target.value)} className="input-field" placeholder="Present" />
+                    <input type="text" value={entry.endDate} onChange={e => store.updateWork(entry.id, 'endDate', e.target.value)} className="input-field" placeholder="Present" />
                   </div>
                 </div>
                 <div className="input-group">
@@ -467,15 +585,23 @@ export default function ResumeForm({ onSubmit, isLoading }: ResumeFormProps) {
                   {entry.bullets.map((b, bi) => (
                     <div key={bi} className="bullet-row">
                       <span className="bullet-marker">▸</span>
-                      <input type="text" value={b} onChange={e => updateBullet(entry.id, bi, e.target.value)} className="input-field bullet-input" placeholder="Accomplished X by doing Y, resulting in Z..." />
-                      {entry.bullets.length > 1 && <button type="button" onClick={() => removeBullet(entry.id, bi)} className="bullet-remove"><X size={12} /></button>}
+                      <input type="text" value={b} onChange={e => store.updateBullet(entry.id, bi, e.target.value)} className="input-field bullet-input" placeholder="Accomplished X by doing Y, resulting in Z..." />
+                      {entry.bullets.length > 1 && <button type="button" onClick={() => store.removeBullet(entry.id, bi)} className="bullet-remove"><X size={12} /></button>}
                     </div>
                   ))}
-                  <button type="button" onClick={() => addBullet(entry.id)} className="add-inline-btn"><Plus size={14} /> Add bullet</button>
+                  <button type="button" onClick={() => store.addBullet(entry.id)} className="add-inline-btn"><Plus size={14} /> Add bullet</button>
+                  <button type="button" onClick={() => handleRewriteBullets(entry.id, entry)} disabled={bulletLoading === entry.id} className="ai-autofill-btn" style={{ marginLeft: '1rem', marginTop: '0.2rem' }}>
+                    {bulletLoading === entry.id ? <><Loader2 size={13} className="spin-icon" /> Rewriting...</> : <><Sparkles size={13} /> AI Rewrite (XYZ)</>}
+                  </button>
+                  {entry.jobTitle && (
+                    <button type="button" onClick={() => handleGenerateRoleBullets(entry.id, entry.jobTitle)} disabled={bulletLoading === entry.id + '_generate'} className="ai-autofill-btn" style={{ marginLeft: '0.5rem', marginTop: '0.2rem', borderColor: 'var(--secondary)', color: 'var(--secondary)' }}>
+                      {bulletLoading === entry.id + '_generate' ? <><Loader2 size={13} className="spin-icon" /> Thinking...</> : <><Sparkles size={13} /> Generate Ideas</>}
+                    </button>
+                  )}
                 </div>
               </div>
             ))}
-            <button type="button" onClick={addWorkEntry} className="btn-secondary full-width"><Plus size={16} /> Add Work Experience</button>
+            <button type="button" onClick={store.addWorkEntry} className="btn-secondary full-width"><Plus size={16} /> Add Work Experience</button>
           </div>
         )}
 
@@ -492,29 +618,34 @@ export default function ResumeForm({ onSubmit, isLoading }: ResumeFormProps) {
               <div key={proj.id} className="entry-card">
                 <div className="entry-card-header">
                   <span className="entry-card-number">#{idx + 1}</span>
-                  <button type="button" onClick={() => removeProject(proj.id)} className="entry-remove-btn"><Trash2 size={14} /></button>
+                  <button type="button" onClick={() => store.removeProject(proj.id)} className="entry-remove-btn"><Trash2 size={14} /></button>
                 </div>
                 <div className="form-grid">
                   <div className="input-group">
                     <label className="input-label-sm">Project Name</label>
-                    <input type="text" value={proj.name} onChange={e => updateProject(proj.id, 'name', e.target.value)} className="input-field" placeholder="AI Resume Builder" />
+                    <input type="text" value={proj.name} onChange={e => store.updateProject(proj.id, 'name', e.target.value)} className="input-field" placeholder="AI Resume Builder" />
                   </div>
                   <div className="input-group">
                     <label className="input-label-sm">Tech Stack</label>
-                    <input type="text" value={proj.techStack} onChange={e => updateProject(proj.id, 'techStack', e.target.value)} className="input-field" placeholder="React, Next.js, Python" />
+                    <input type="text" value={proj.techStack} onChange={e => store.updateProject(proj.id, 'techStack', e.target.value)} className="input-field" placeholder="React, Next.js, Python" />
                   </div>
                 </div>
                 <div className="input-group">
-                  <label className="input-label-sm">Description</label>
-                  <textarea value={proj.description} onChange={e => updateProject(proj.id, 'description', e.target.value)} className="input-field" rows={2} placeholder="Built a full-stack application that..." />
+                  <div className="label-row">
+                    <label className="input-label-sm">Description</label>
+                    <button type="button" onClick={() => handleRewriteProjectDesc(proj.id, proj.description)} disabled={loadingSuggestion === proj.id || !proj.description} className="ai-autofill-btn" style={{ padding: '0.2rem 0.5rem', fontSize: '0.75rem' }}>
+                      {loadingSuggestion === proj.id ? <><Loader2 size={12} className="spin-icon" /> Rewriting...</> : <><Sparkles size={12} /> AI Rewrite</>}
+                    </button>
+                  </div>
+                  <textarea value={proj.description} onChange={e => store.updateProject(proj.id, 'description', e.target.value)} className="input-field" rows={2} placeholder="Built a full-stack application that..." />
                 </div>
                 <div className="input-group">
                   <label className="input-label-sm">Link</label>
-                  <input type="url" value={proj.link} onChange={e => updateProject(proj.id, 'link', e.target.value)} className="input-field" placeholder="https://github.com/..." />
+                  <input type="url" value={proj.link} onChange={e => store.updateProject(proj.id, 'link', e.target.value)} className="input-field" placeholder="https://github.com/..." />
                 </div>
               </div>
             ))}
-            <button type="button" onClick={addProject} className="btn-secondary full-width"><Plus size={16} /> Add Project</button>
+            <button type="button" onClick={store.addProject} className="btn-secondary full-width"><Plus size={16} /> Add Project</button>
           </div>
         )}
 
@@ -525,31 +656,31 @@ export default function ResumeForm({ onSubmit, isLoading }: ResumeFormProps) {
               <div key={edu.id} className="entry-card">
                 <div className="entry-card-header">
                   <span className="entry-card-number">#{idx + 1}</span>
-                  {data.education.length > 1 && <button type="button" onClick={() => removeEdu(edu.id)} className="entry-remove-btn"><Trash2 size={14} /></button>}
+                  {data.education.length > 1 && <button type="button" onClick={() => store.removeEducation(edu.id)} className="entry-remove-btn"><Trash2 size={14} /></button>}
                 </div>
                 <div className="form-grid">
                   <div className="input-group">
                     <label className="input-label-sm">Degree / Program</label>
-                    <input type="text" value={edu.degree} onChange={e => updateEdu(edu.id, 'degree', e.target.value)} className="input-field" placeholder="B.S. Computer Science" />
+                    <input type="text" value={edu.degree} onChange={e => store.updateEducation(edu.id, 'degree', e.target.value)} className="input-field" placeholder="B.S. Computer Science" />
                   </div>
                   <div className="input-group">
                     <label className="input-label-sm">Institution</label>
-                    <input type="text" value={edu.institution} onChange={e => updateEdu(edu.id, 'institution', e.target.value)} className="input-field" placeholder="Stanford University" />
+                    <input type="text" value={edu.institution} onChange={e => store.updateEducation(edu.id, 'institution', e.target.value)} className="input-field" placeholder="Stanford University" />
                   </div>
                 </div>
                 <div className="form-grid">
                   <div className="input-group">
                     <label className="input-label-sm">Year</label>
-                    <input type="text" value={edu.year} onChange={e => updateEdu(edu.id, 'year', e.target.value)} className="input-field" placeholder="2020" />
+                    <input type="text" value={edu.year} onChange={e => store.updateEducation(edu.id, 'year', e.target.value)} className="input-field" placeholder="2020" />
                   </div>
                   <div className="input-group">
                     <label className="input-label-sm">GPA (optional)</label>
-                    <input type="text" value={edu.gpa} onChange={e => updateEdu(edu.id, 'gpa', e.target.value)} className="input-field" placeholder="3.9/4.0" />
+                    <input type="text" value={edu.gpa} onChange={e => store.updateEducation(edu.id, 'gpa', e.target.value)} className="input-field" placeholder="3.9/4.0" />
                   </div>
                 </div>
               </div>
             ))}
-            <button type="button" onClick={addEdu} className="btn-secondary full-width"><Plus size={16} /> Add Education</button>
+            <button type="button" onClick={store.addEducation} className="btn-secondary full-width"><Plus size={16} /> Add Education</button>
           </div>
         )}
 
@@ -564,7 +695,7 @@ export default function ResumeForm({ onSubmit, isLoading }: ResumeFormProps) {
                   {summaryLoading ? <><Loader2 size={13} className="spin-icon" /> Generating...</> : <><Sparkles size={13} /> AI Auto-fill</>}
                 </button>
               </div>
-              <textarea value={data.summary} onChange={e => updateField('summary', e.target.value)} className="input-field" rows={3} placeholder="A results-driven software engineer with 5+ years..." />
+              <textarea value={data.summary} onChange={e => store.updateField('summary', e.target.value)} className="input-field" rows={3} placeholder="A results-driven software engineer with 5+ years..." />
               <p className="field-hint">Click &quot;AI Auto-fill&quot; to generate from your data, or write your own.</p>
             </div>
 
@@ -573,13 +704,13 @@ export default function ResumeForm({ onSubmit, isLoading }: ResumeFormProps) {
               <label className="input-label"><Award size={14} /> Certifications</label>
               <div className="skill-input-row">
                 <input type="text" value={certInput} onChange={e => setCertInput(e.target.value)}
-                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addChip(data.certifications, v => updateField('certifications', v), certInput, setCertInput); } }}
+                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleAddChip('certifications', certInput, setCertInput); } }}
                   className="input-field" placeholder="AWS Certified Solutions Architect" />
-                <button type="button" onClick={() => addChip(data.certifications, v => updateField('certifications', v), certInput, setCertInput)} className="btn-icon"><Plus size={16} /></button>
+                <button type="button" onClick={() => handleAddChip('certifications', certInput, setCertInput)} className="btn-icon"><Plus size={16} /></button>
               </div>
               {data.certifications.length > 0 && (
                 <div className="skill-chips">{data.certifications.map((c, i) => (
-                  <span key={i} className="skill-chip cert-chip">{c}<button type="button" onClick={() => removeChip(data.certifications, v => updateField('certifications', v), i)} className="chip-remove"><X size={11} /></button></span>
+                  <span key={i} className="skill-chip cert-chip">{c}<button type="button" onClick={() => store.removeChip('certifications', i)} className="chip-remove"><X size={11} /></button></span>
                 ))}</div>
               )}
             </div>
@@ -589,13 +720,13 @@ export default function ResumeForm({ onSubmit, isLoading }: ResumeFormProps) {
               <label className="input-label"><Languages size={14} /> Languages</label>
               <div className="skill-input-row">
                 <input type="text" value={langInput} onChange={e => setLangInput(e.target.value)}
-                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addChip(data.languages, v => updateField('languages', v), langInput, setLangInput); } }}
+                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleAddChip('languages', langInput, setLangInput); } }}
                   className="input-field" placeholder="English (Native), Hindi (Fluent)" />
-                <button type="button" onClick={() => addChip(data.languages, v => updateField('languages', v), langInput, setLangInput)} className="btn-icon"><Plus size={16} /></button>
+                <button type="button" onClick={() => handleAddChip('languages', langInput, setLangInput)} className="btn-icon"><Plus size={16} /></button>
               </div>
               {data.languages.length > 0 && (
                 <div className="skill-chips">{data.languages.map((l, i) => (
-                  <span key={i} className="skill-chip lang-chip">{l}<button type="button" onClick={() => removeChip(data.languages, v => updateField('languages', v), i)} className="chip-remove"><X size={11} /></button></span>
+                  <span key={i} className="skill-chip lang-chip">{l}<button type="button" onClick={() => store.removeChip('languages', i)} className="chip-remove"><X size={11} /></button></span>
                 ))}</div>
               )}
             </div>
@@ -605,7 +736,7 @@ export default function ResumeForm({ onSubmit, isLoading }: ResumeFormProps) {
               <label className="input-label">Resume Template</label>
               <div className="template-grid">
                 {TEMPLATES.map(t => (
-                  <button key={t.id} type="button" className={`template-card ${data.template === t.id ? 'active' : ''}`} onClick={() => updateField('template', t.id)}>
+                  <button key={t.id} type="button" className={`template-card ${data.template === t.id ? 'active' : ''}`} onClick={() => store.updateField('template', t.id)}>
                     <span className="template-card-name">{t.name}</span>
                     <span className="template-card-desc">{t.desc}</span>
                     {data.template === t.id && <Check size={16} className="template-check" />}
@@ -616,20 +747,75 @@ export default function ResumeForm({ onSubmit, isLoading }: ResumeFormProps) {
           </div>
         )}
 
-        {/* Navigation */}
-        <div className="step-nav">
+        <div className="step-nav" style={{ alignItems: 'center' }}>
           {step > 0 && <button type="button" onClick={prevStep} className="btn-secondary"><ChevronLeft size={16} /> Back</button>}
+          
           <div style={{ flex: 1 }} />
-          {step > 0 && !isLastStep && <button type="button" onClick={nextStep} disabled={!canProceed(step)} className="btn-primary">Next <ChevronRight size={16} /></button>}
-          {isLastStep && (
-            <button type="submit" disabled={isLoading || !canProceed(1) || !canProceed(2)} className="btn-primary generate-btn">
-              {isLoading ? <><Loader2 size={16} className="spin-icon" /> Generating...</> : <><Send size={16} /> Generate Resume</>}
+          
+          {step > 0 && (
+            <button 
+              type="button" 
+              onClick={() => setShowConfirmReset(true)}
+              className="btn-secondary" 
+              title="Clear all text and start over"
+              style={{ color: 'var(--error)', borderColor: 'rgba(239,68,68,0.3)', marginRight: '1rem', padding: '0.6rem 0.75rem' }}
+            >
+              <RefreshCcw size={16} /> <span className="hide-on-mobile">Start Fresh</span>
             </button>
           )}
+          {step > 0 && !isLastStep && <button type="button" onClick={nextStep} disabled={!canProceed(step)} className="btn-primary">Next <ChevronRight size={16} /></button>}
+          
+          {isLastStep && (
+            <div style={{ display: 'flex', gap: '0.75rem' }}>
+              <button type="button" onClick={handleGenerateCoverLetter} disabled={coverLetterLoading || !canProceed(1)} className="btn-secondary generate-btn" style={{ borderColor: 'var(--accent)', color: 'var(--accent)' }}>
+                {coverLetterLoading ? <><Loader2 size={16} className="spin-icon" /> Generating...</> : <><Sparkles size={16} /> Cover Letter</>}
+              </button>
+              <button type="submit" disabled={isLoading || !canProceed(1) || !canProceed(2)} className="btn-primary generate-btn">
+                {isLoading ? <><Loader2 size={16} className="spin-icon" /> Generating...</> : <><Send size={16} /> Generate Resume</>}
+              </button>
+            </div>
+          )}
         </div>
+
+        {coverLetter && (
+          <div className="input-group animate-fade-in" style={{ marginTop: '1.5rem', padding: '1.5rem', background: 'rgba(139, 92, 246, 0.05)', borderRadius: 'var(--radius-lg)', border: '1px solid rgba(139, 92, 246, 0.2)' }}>
+            <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', color: 'var(--accent)', fontSize: '1.1rem' }}>
+              <Sparkles size={18} /> Generated Cover Letter
+            </h3>
+            <textarea value={coverLetter} onChange={(e) => setCoverLetter(e.target.value)} className="input-field jd-textarea" style={{ minHeight: '300px', cursor: 'text' }} />
+            <p className="field-hint" style={{ marginTop: '0.5rem' }}>You can directly edit this cover letter before copying.</p>
+          </div>
+        )}
       </form>
+
+      {/* Custom Confirm Reset Modal */}
+      {showConfirmReset && (
+        <div className="resume-modal-overlay">
+          <div className="resume-modal-content" style={{ maxWidth: '450px', padding: '2rem', textAlign: 'center' }}>
+            <h3 style={{ marginBottom: '1rem', color: 'var(--error)' }}>Start Fresh?</h3>
+            <p style={{ marginBottom: '2rem', color: 'var(--text-muted)' }}>
+              Are you sure you want to clear all form data and start a new resume from scratch? This cannot be undone.
+            </p>
+            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+              <button type="button" onClick={() => setShowConfirmReset(false)} className="btn-secondary">
+                Cancel
+              </button>
+              <button 
+                type="button" 
+                onClick={() => {
+                  store.resetForm();
+                  setCoverLetter(null);
+                  setShowConfirmReset(false);
+                }} 
+                className="btn-primary"
+                style={{ background: 'var(--error)', borderColor: 'var(--error)' }}
+              >
+                Yes, Clear Everything
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
-
-export type { ResumeData };

@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import { extractText } from 'unpdf';
 import mammoth from 'mammoth';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { deductCredits, CREDIT_COSTS } from '@/lib/credits';
 
 export async function POST(req: Request) {
     try {
@@ -9,6 +12,19 @@ export async function POST(req: Request) {
 
         if (!file) {
             return NextResponse.json({ error: 'No file provided' }, { status: 400 });
+        }
+
+        const session = await getServerSession(authOptions);
+        if (!session?.user) {
+            return NextResponse.json({ error: 'Unauthorized. Please sign in.' }, { status: 401 });
+        }
+
+        const userId = (session.user as any).id;
+
+        try {
+            await deductCredits(userId, 'PARSE_RESUME', 'AI Resume Parsing');
+        } catch (creditError: any) {
+            return NextResponse.json({ error: creditError.message || 'Insufficient credits' }, { status: 403 });
         }
 
         console.log('parse-resume: Received file:', file.name, 'size:', file.size);
@@ -117,8 +133,8 @@ ${text.substring(0, 5000)}
             },
             body: JSON.stringify({
                 model: "google/gemma-3-4b-it:free",
-                temperature: 0.1,
-                max_tokens: 1500,
+                temperature: 0.0,
+                max_tokens: 3000,
                 messages: [{ role: 'user', content: parsePrompt }],
             }),
         });
@@ -132,15 +148,18 @@ ${text.substring(0, 5000)}
         const data = await response.json();
         let content = data.choices?.[0]?.message?.content?.trim() || '';
 
-        // Strip code fences
-        content = content.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '');
+        // Aggressively match only the JSON payload 
+        const jsonMatch = content.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+            content = jsonMatch[0];
+        }
 
         try {
             const parsed = JSON.parse(content);
             return NextResponse.json({ parsed });
-        } catch {
-            console.error('Failed to parse AI JSON:', content.substring(0, 200));
-            return NextResponse.json({ error: 'AI returned invalid response. Try again.' }, { status: 500 });
+        } catch (jsonErr) {
+            console.error('Failed to parse AI JSON:', content.substring(0, 500));
+            return NextResponse.json({ error: 'AI returned invalid formatting. Please try uploading a cleaner format or entering manually.' }, { status: 500 });
         }
     } catch (err) {
         console.error('Parse resume error:', err);

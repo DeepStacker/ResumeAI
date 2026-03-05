@@ -1,4 +1,7 @@
 import { NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { deductCredits, CREDIT_COSTS } from '@/lib/credits';
 
 export async function POST(req: Request) {
     try {
@@ -6,6 +9,19 @@ export async function POST(req: Request) {
 
         if (!resume || !jobDescription) {
             return NextResponse.json({ error: 'Resume and job description required' }, { status: 400 });
+        }
+
+        const session = await getServerSession(authOptions);
+        if (!session?.user) {
+            return NextResponse.json({ error: 'Unauthorized. Please sign in.' }, { status: 401 });
+        }
+
+        const userId = (session.user as any).id;
+
+        try {
+            await deductCredits(userId, 'ATS_SCORE', 'ATS Compatibility Score');
+        } catch (creditError: any) {
+            return NextResponse.json({ error: creditError.message || 'Insufficient credits' }, { status: 403 });
         }
 
         const apiKey = process.env.OPENROUTER_API_KEY;

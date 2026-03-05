@@ -1,7 +1,24 @@
 import { NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { deductCredits } from '@/lib/credits';
+import { prisma } from '@/lib/prisma';
 
 export async function POST(req: Request) {
     try {
+        // Auth check
+        const session = await getServerSession(authOptions);
+        if (!session?.user) {
+            return NextResponse.json({ error: 'Please sign in to generate a resume.' }, { status: 401 });
+        }
+        const userId = (session.user as any).id;
+
+        // Credit check
+        const creditResult = await deductCredits(userId, 'GENERATE_RESUME', 'Generated ATS resume');
+        if (!creditResult.success) {
+            return NextResponse.json({ error: creditResult.error || 'Insufficient credits.' }, { status: 402 });
+        }
+
         const body = await req.json();
         const { personal, summary, targetRole, jobDescription, skills, experience, projects, education, certifications, languages, template } = body;
 
@@ -123,6 +140,23 @@ STRICT RULES:
         const resume = data.choices?.[0]?.message?.content;
 
         if (!resume) throw new Error('Unexpected API response');
+
+        // ====== SAVE TO DATABASE ======
+        try {
+            await prisma.resume.create({
+                data: {
+                    userId,
+                    title: `${targetRole} Resume`,
+                    data: body,           // Store the full JSON payload
+                    markdown: resume,     // Store the generated markdown result
+                }
+            });
+            console.log(`Saved new resume for user ${userId}`);
+        } catch (dbErr) {
+            console.error('Failed to save generated resume to database:', dbErr);
+            // We still return the resume to the user even if DB save fails, 
+            // but we log the error for debugging.
+        }
 
         return NextResponse.json({ resume });
     } catch (error) {

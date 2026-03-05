@@ -1,89 +1,142 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
-import ResumeForm from '@/components/ResumeForm';
-import ResumePreview from '@/components/ResumePreview';
-import { ResumeData } from '@/types/resume';
-import styles from './page.module.css';
-import { AlertCircle, Sparkles } from 'lucide-react';
+import React from 'react';
+import Link from 'next/link';
+import { useSession } from 'next-auth/react';
+import { Sparkles, FileText, Target, Zap, ChevronRight, CheckCircle2, Upload, Briefcase, GraduationCap, Code } from 'lucide-react';
 
-export default function Home() {
-  const [resumeMarkdown, setResumeMarkdown] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const lastJD = useRef<string>('');
-
-  const handleGenerateResume = async (data: ResumeData) => {
-    setIsLoading(true);
-    setError(null);
-    setResumeMarkdown(null);
-    lastJD.current = data.jobDescription || '';
-
-    try {
-      const response = await fetch('/api/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-      }
-
-      const result = await response.json();
-      setResumeMarkdown(result.resume);
-
-      if (window.innerWidth < 1024) {
-        setTimeout(() => {
-          document.getElementById('preview-section')?.scrollIntoView({ behavior: 'smooth' });
-        }, 100);
-      }
-    } catch (err: any) {
-      console.error('Failed to generate resume:', err);
-      setError(err.message || 'An unexpected error occurred.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const hasResume = resumeMarkdown !== null;
+export default function LandingPage() {
+  const { status } = useSession();
 
   return (
-    <div className={styles.pageContainer}>
-      <header className={styles.header}>
-        <div className={styles.headerBadge}><Sparkles size={14} /> AI-Powered Resume Builder</div>
-        <h1 className={styles.headerTitle}>Build Your Executive Resume</h1>
-        <p className={styles.headerSubtitle}>
-          Craft an ATS-optimized, high-impact resume in seconds. Upload your existing resume or start fresh — our AI does the heavy lifting.
-        </p>
-      </header>
-
-      {error && (
-        <div className={styles.errorMessage}>
-          <AlertCircle size={18} />
-          <p>{error}</p>
-          <button onClick={() => setError(null)} className={styles.errorDismiss}>&times;</button>
+    <div className="landing-page">
+      {/* Hero Section */}
+      <section className="hero-section">
+        <div className="hero-content">
+          <div className="hero-badge">
+            <Sparkles size={16} /> <span>ResumeAI v4 Unleashed</span>
+          </div>
+          <h1 className="hero-title">
+            Land Your Dream Job with an <br />
+            <span className="text-gradient">AI-Powered Resume</span>
+          </h1>
+          <p className="hero-subtitle">
+            Instantly score against the ATS, rewrite bullets for maximum impact, and generate professional cover letters. Start scaling your career today.
+          </p>
+          <div className="hero-actions">
+            <Link 
+              href={status === 'authenticated' ? '/builder' : '/auth/signin'} 
+              className="btn-primary hero-btn"
+            >
+              {status === 'authenticated' ? 'Go to Builder' : 'Start Building for Free'} <ChevronRight size={18} />
+            </Link>
+            {!status || status === 'unauthenticated' ? (
+              <p className="hero-subtext">Includes 10 free AI credits. No credit card required.</p>
+            ) : null}
+          </div>
         </div>
-      )}
-
-      <main className={`${styles.mainLayout} ${hasResume ? styles.withPreview : styles.formOnly}`}>
-        <div className={styles.formSection}>
-          <ResumeForm onSubmit={handleGenerateResume} isLoading={isLoading} />
+        
+        {/* Abstract shape / mock image area */}
+        <div className="hero-visual glass-panel">
+            <div className="visual-code-mock">
+                <div className="mock-dot red"></div>
+                <div className="mock-dot yellow"></div>
+                <div className="mock-dot green"></div>
+            </div>
+            <div className="visual-content">
+                <div className="mock-line title"></div>
+                <div className="mock-line"></div>
+                <div className="mock-line short"></div>
+                <br />
+                <div className="mock-line"></div>
+                <div className="mock-line highlight"></div>
+                <div className="mock-line"></div>
+            </div>
+            <div className="visual-badge"><Target size={14} /> ATS Score: 98/100</div>
         </div>
-        <div id="preview-section" className={styles.previewSection}>
-          <ResumePreview
-            resumeMarkdown={resumeMarkdown}
-            onResumeChange={setResumeMarkdown}
-            onReset={() => setResumeMarkdown(null)}
-            jobDescription={lastJD.current}
-          />
-        </div>
-      </main>
+      </section>
 
-      <footer className={styles.footer}>
-        <p>© {new Date().getFullYear()} AI Resume Generator — Built with Next.js & OpenRouter</p>
-      </footer>
+      {/* The 8-Step Process */}
+      <section className="process-section">
+        <div className="features-header">
+          <h2>The 8-Step Intelligent Builder</h2>
+          <p>We break down the complex resume building process into 8 simple, manageable steps.</p>
+        </div>
+        <div className="process-grid">
+            <div className="process-step glass-panel">
+                <Upload size={20} className="step-icon" />
+                <h4>1. Smart Parsing</h4>
+                <p>Upload your old PDF/Word doc and our AI instantly extracts your data.</p>
+            </div>
+            <div className="process-step glass-panel">
+                <Target size={20} className="step-icon" />
+                <h4>2. Target JD</h4>
+                <p>Paste the exact job description you want to apply for to guide the AI.</p>
+            </div>
+            <div className="process-step glass-panel">
+                <Code size={20} className="step-icon" />
+                <h4>3. Tailored Skills</h4>
+                <p>AI suggests the exact keywords missing from your profile based on the JD.</p>
+            </div>
+            <div className="process-step glass-panel">
+                <Briefcase size={20} className="step-icon" />
+                <h4>4. XYZ Experience</h4>
+                <p>Rewrite weak bullets into high-impact Google XYZ formula achievements.</p>
+            </div>
+            <div className="process-step glass-panel">
+                <GraduationCap size={20} className="step-icon" />
+                <h4>5. Education & Projects</h4>
+                <p>Highlight your degrees, certifications, and standout portfolio projects.</p>
+            </div>
+            <div className="process-step glass-panel">
+                <FileText size={20} className="step-icon" />
+                <h4>6. Auto Cover Letters</h4>
+                <p>Generate a highly-persuasive cover letter tailored exactly to the target JD.</p>
+            </div>
+        </div>
+      </section>
+
+      {/* Templates Section */}
+      <section className="templates-showcase">
+        <div className="features-header">
+          <h2>ATS-Optimized Templates</h2>
+          <p>Ditch the graphic-heavy Canva templates that robots can't read. Choose from our 3 proven formats.</p>
+        </div>
+        <div className="templates-grid">
+            <div className="template-mockup glass-panel">
+                <div className="template-preview professional-preview"></div>
+                <h4>Professional</h4>
+                <p>Clean, traditional corporate layout perfect for finance, law, and corporate roles.</p>
+            </div>
+            <div className="template-mockup glass-panel">
+                <div className="template-preview modern-preview"></div>
+                <h4>Modern</h4>
+                <p>Contemporary look with accent sections. Ideal for tech and marketing.</p>
+            </div>
+            <div className="template-mockup glass-panel">
+                <div className="template-preview minimal-preview"></div>
+                <h4>Minimal</h4>
+                <p>Simple, highly ATS-parseable layout focused strictly on content.</p>
+            </div>
+        </div>
+      </section>
+
+      {/* Trust Section */}
+      <section className="trust-section">
+        <div className="trust-content" style={{maxWidth: '800px', textAlign: 'center'}}>
+          <h2>Ready to beat the algorithms?</h2>
+          <p style={{fontSize: '1.1rem', opacity: 0.8, marginBottom: '2rem'}}>
+             Join professionals optimizing their resumes with data-backed AI. No subscription required, just flexible pay-as-you-go tokens.
+          </p>
+          <Link 
+              href={status === 'authenticated' ? '/builder' : '/auth/signin'} 
+              className="btn-primary hero-btn"
+              style={{margin: '0 auto'}}
+            >
+              Start Building Now
+          </Link>
+        </div>
+      </section>
     </div>
   );
 }

@@ -24,6 +24,12 @@ export async function POST(req: Request) {
             summary: `Based on this candidate profile:\n${value}\n\nWrite a compelling 2-3 sentence professional summary for a "${target_role || 'professional'}" role. It should be achievement-focused, mention years of experience if inferable, highlight key strengths, and include ATS keywords. Output ONLY the summary paragraph, no quotes or labels.`,
 
             bullets: `Rewrite this work experience bullet point to be more impactful using the Google XYZ formula (Accomplished [X] measured by [Y] by doing [Z]): "${value}". The target role is "${target_role || 'a professional role'}". Use strong action verbs and ATS keywords. Output ONLY the improved bullet point.`,
+
+            projectDesc: `Rewrite this project description to be more impactful: "${value}". The target role is "${target_role || 'a professional role'}". Focus on the technical stack used, the problem solved, and the measurable outcome. Use strong action verbs. Output ONLY the improved 2-3 sentence description.`,
+
+            roleBullets: `The user wants to add achievements for the job title: "${value}". The target role they are applying for is "${target_role || 'a professional role'}". Generate 3 highly impressive, realistic bullet points using the Google XYZ formula (Accomplished [X] measured by [Y] by doing [Z]) that a person in this role would have. Include placeholders like [Number]% if needed. Separate each bullet point with a newline character. Output ONLY the bullet points, no introductory text.`,
+
+            targetRoleIdeation: `The candidate has the following experience/skills: "${value}". Suggest 3 highly relevant target job titles they should apply for. Format as a comma-separated list. Output ONLY the suggested titles.`
         };
 
         const prompt = fieldPrompts[field];
