@@ -1,27 +1,28 @@
 'use client';
 
-import React, { useState } from 'react';
-import ResumeForm, { ResumeData } from '@/components/ResumeForm';
+import React, { useState, useRef } from 'react';
+import ResumeForm from '@/components/ResumeForm';
 import ResumePreview from '@/components/ResumePreview';
+import { ResumeData } from '@/types/resume';
 import styles from './page.module.css';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, Sparkles } from 'lucide-react';
 
 export default function Home() {
   const [resumeMarkdown, setResumeMarkdown] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const lastJD = useRef<string>('');
 
   const handleGenerateResume = async (data: ResumeData) => {
     setIsLoading(true);
     setError(null);
     setResumeMarkdown(null);
+    lastJD.current = data.jobDescription || '';
 
     try {
       const response = await fetch('/api/generate', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       });
 
@@ -32,56 +33,56 @@ export default function Home() {
 
       const result = await response.json();
       setResumeMarkdown(result.resume);
-      
-      // Scroll to preview on mobile devices after generation
+
       if (window.innerWidth < 1024) {
-         document.getElementById('preview-section')?.scrollIntoView({ behavior: 'smooth' });
+        setTimeout(() => {
+          document.getElementById('preview-section')?.scrollIntoView({ behavior: 'smooth' });
+        }, 100);
       }
-      
     } catch (err: any) {
       console.error('Failed to generate resume:', err);
-      setError(err.message || 'An unexpected error occurred while generating the resume.');
+      setError(err.message || 'An unexpected error occurred.');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleReset = () => {
-    setResumeMarkdown(null);
-  };
+  const hasResume = resumeMarkdown !== null;
 
   return (
     <div className={styles.pageContainer}>
-      
-      <header className={`${styles.header} animate-fade-in`}>
-        <h1 className={styles.headerTitle}>AI Executive Resume Builder</h1>
+      <header className={styles.header}>
+        <div className={styles.headerBadge}><Sparkles size={14} /> AI-Powered Resume Builder</div>
+        <h1 className={styles.headerTitle}>Build Your Executive Resume</h1>
         <p className={styles.headerSubtitle}>
-          Craft an ATS-optimized, high-impact resume in seconds using advanced AI models. 
-          Fill out your details below and stand out from the crowd.
+          Craft an ATS-optimized, high-impact resume in seconds. Upload your existing resume or start fresh — our AI does the heavy lifting.
         </p>
       </header>
 
       {error && (
-        <div className={`${styles.errorMessage} animate-fade-in`}>
-          <AlertCircle size={20} />
+        <div className={styles.errorMessage}>
+          <AlertCircle size={18} />
           <p>{error}</p>
+          <button onClick={() => setError(null)} className={styles.errorDismiss}>&times;</button>
         </div>
       )}
 
-      <main className={styles.mainLayout}>
-        {/* Form Section */}
-        <div className={`${styles.formSection} delay-100`}>
+      <main className={`${styles.mainLayout} ${hasResume ? styles.withPreview : styles.formOnly}`}>
+        <div className={styles.formSection}>
           <ResumeForm onSubmit={handleGenerateResume} isLoading={isLoading} />
         </div>
-
-        {/* Preview Section */}
-        <div id="preview-section" className={`${styles.previewSection} delay-200`}>
-          <ResumePreview resumeMarkdown={resumeMarkdown} onReset={handleReset} />
+        <div id="preview-section" className={styles.previewSection}>
+          <ResumePreview
+            resumeMarkdown={resumeMarkdown}
+            onResumeChange={setResumeMarkdown}
+            onReset={() => setResumeMarkdown(null)}
+            jobDescription={lastJD.current}
+          />
         </div>
       </main>
 
-      <footer className={`${styles.footer} animate-fade-in delay-300`}>
-        <p>© {new Date().getFullYear()} AI Resume Generator. All rights reserved.</p>
+      <footer className={styles.footer}>
+        <p>© {new Date().getFullYear()} AI Resume Generator — Built with Next.js & OpenRouter</p>
       </footer>
     </div>
   );

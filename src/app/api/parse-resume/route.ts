@@ -8,78 +8,104 @@ export async function POST(req: Request) {
         const file = formData.get('file') as File | null;
 
         if (!file) {
-            console.error('parse-resume: No file in FormData. Keys:', [...formData.keys()]);
             return NextResponse.json({ error: 'No file provided' }, { status: 400 });
         }
 
-        console.log('parse-resume: Received file:', file.name, 'size:', file.size, 'type:', file.type);
+        console.log('parse-resume: Received file:', file.name, 'size:', file.size);
 
         const fileName = file.name.toLowerCase();
         const arrayBuffer = await file.arrayBuffer();
         const buffer = Buffer.from(arrayBuffer);
         let text = '';
 
-        // --- Extract text based on file type ---
         if (fileName.endsWith('.pdf')) {
             try {
                 const result = await extractText(new Uint8Array(arrayBuffer));
                 text = Array.isArray(result.text) ? result.text.join('\n') : String(result.text);
-                console.log('parse-resume: PDF extracted text length:', text.length);
             } catch (e) {
-                console.error('parse-resume: PDF parse error:', e);
-                return NextResponse.json({ error: 'Could not parse PDF. The file may be image-based or corrupted.' }, { status: 400 });
+                console.error('PDF parse error:', e);
+                return NextResponse.json({ error: 'Could not parse PDF.' }, { status: 400 });
             }
         } else if (fileName.endsWith('.docx')) {
             try {
                 const result = await mammoth.extractRawText({ buffer });
                 text = result.value;
-                console.log('parse-resume: DOCX extracted text length:', text.length);
             } catch (e) {
-                console.error('parse-resume: DOCX parse error:', e);
-                return NextResponse.json({ error: 'Could not parse Word document.' }, { status: 400 });
+                console.error('DOCX parse error:', e);
+                return NextResponse.json({ error: 'Could not parse Word doc.' }, { status: 400 });
             }
         } else if (fileName.endsWith('.doc')) {
-            return NextResponse.json({ error: '.doc files are not supported. Please save as .docx and re-upload.' }, { status: 400 });
+            return NextResponse.json({ error: '.doc not supported. Please save as .docx.' }, { status: 400 });
         } else if (fileName.endsWith('.txt') || fileName.endsWith('.md')) {
             text = buffer.toString('utf-8');
         } else {
-            return NextResponse.json({ error: 'Unsupported file type. Please upload PDF, DOCX, TXT, or MD.' }, { status: 400 });
+            return NextResponse.json({ error: 'Unsupported file type.' }, { status: 400 });
         }
 
         if (!text || text.trim().length < 10) {
-            console.error('parse-resume: Extracted text too short:', text.length, 'chars');
-            return NextResponse.json(
-                { error: 'File appears to be empty or the text could not be extracted. If this is a scanned/image-based PDF, please try a text-based version.' },
-                { status: 400 }
-            );
+            return NextResponse.json({ error: 'File appears empty or unreadable.' }, { status: 400 });
         }
 
         const apiKey = process.env.OPENROUTER_API_KEY;
-        if (!apiKey) {
-            return NextResponse.json({ error: 'Server config error' }, { status: 500 });
-        }
+        if (!apiKey) return NextResponse.json({ error: 'Server config error' }, { status: 500 });
 
-        const parsePrompt = `
-You are a resume parser. Return ONLY valid JSON, no other text.
+        const parsePrompt = `You are a resume parser. Return ONLY valid JSON, no other text.
 
-Analyze the following resume text and extract the candidate's information into a strict JSON format.
-Return ONLY a valid JSON object with these exact keys:
+Extract ALL information from this resume into the following STRICT JSON structure.
+For arrays, extract EVERY entry found in the resume — do not summarize or merge.
+
 {
-  "name": "Full Name",
-  "contact": "Phone and/or email",
-  "location": "City, State or country",
-  "target_role": "Current or most recent job title",
-  "skills": "Comma separated list of skills",
-  "experience": "Summary of work experience and projects",
-  "education": "Education and certifications"
+  "fullName": "string",
+  "email": "string",
+  "phone": "string",
+  "location": "string",
+  "linkedin": "string or empty",
+  "github": "string or empty",
+  "portfolio": "string or empty",
+  "summary": "professional summary if present",
+  "targetRole": "most recent or current job title",
+  "skills": ["skill1", "skill2", "..."],
+  "experience": [
+    {
+      "jobTitle": "string",
+      "company": "string",
+      "location": "string",
+      "startDate": "string",
+      "endDate": "string or Present",
+      "bullets": ["achievement 1", "achievement 2"]
+    }
+  ],
+  "projects": [
+    {
+      "name": "string",
+      "techStack": "string",
+      "description": "string",
+      "link": "string or empty"
+    }
+  ],
+  "education": [
+    {
+      "degree": "string",
+      "institution": "string",
+      "year": "string",
+      "gpa": "string or empty"
+    }
+  ],
+  "certifications": ["cert1", "cert2"],
+  "languages": ["English", "Hindi"]
 }
 
-If a field cannot be determined, use an empty string "".
-Do NOT include any text outside the JSON object. No markdown, no explanation.
+Rules:
+- Extract EVERY work experience entry separately
+- Extract EVERY education entry separately
+- Extract EVERY project separately
+- Skills should be individual items, not grouped
+- If a field is not found, use empty string "" or empty array []
+- Do NOT include any text outside the JSON
 
 Resume text:
 ---
-${text.substring(0, 4000)}
+${text.substring(0, 5000)}
 ---
 `;
 
@@ -92,38 +118,32 @@ ${text.substring(0, 4000)}
             body: JSON.stringify({
                 model: "google/gemma-3-4b-it:free",
                 temperature: 0.1,
-                max_tokens: 800,
-                messages: [
-                    { role: 'user', content: parsePrompt },
-                ],
+                max_tokens: 1500,
+                messages: [{ role: 'user', content: parsePrompt }],
             }),
         });
 
         if (!response.ok) {
             const errText = await response.text();
-            console.error('parse-resume: OpenRouter API error:', errText);
-            return NextResponse.json({ error: 'Failed to parse resume with AI' }, { status: 500 });
+            console.error('Parse API error:', errText);
+            return NextResponse.json({ error: 'Failed to parse with AI' }, { status: 500 });
         }
 
         const data = await response.json();
         let content = data.choices?.[0]?.message?.content?.trim() || '';
 
-        // Strip markdown code fences if present
+        // Strip code fences
         content = content.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '');
 
         try {
             const parsed = JSON.parse(content);
             return NextResponse.json({ parsed });
         } catch {
-            console.error('parse-resume: Failed to parse AI JSON response:', content);
-            return NextResponse.json(
-                { error: 'AI returned an invalid response. Please try again.' },
-                { status: 500 }
-            );
+            console.error('Failed to parse AI JSON:', content.substring(0, 200));
+            return NextResponse.json({ error: 'AI returned invalid response. Try again.' }, { status: 500 });
         }
-
     } catch (err) {
-        console.error('parse-resume: Unexpected error:', err);
-        return NextResponse.json({ error: 'Unexpected error parsing resume' }, { status: 500 });
+        console.error('Parse resume error:', err);
+        return NextResponse.json({ error: 'Unexpected error' }, { status: 500 });
     }
 }

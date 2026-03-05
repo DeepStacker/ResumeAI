@@ -1,87 +1,187 @@
 .pageContainer {
     min-height: 100vh;
-    padding: 2rem;
-    max-width: 1400px;
+    padding: 1.5rem;
+    max-width: 1600px;
     margin: 0 auto;
 }
 
-.header {
-    text-align: center;
-    margin-bottom: 3rem;
-    padding: 2rem 0;
+@media (max-width: 640px) {
+    .pageContainer {
+        padding: 0.75rem;
+    }
 }
 
-.headerTitle {
-    font-size: clamp(2rem, 5vw, 3.5rem);
-    font-weight: 800;
-    letter-spacing: -0.02em;
-    background: linear-gradient(135deg, var(--primary), var(--secondary));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+/* ===== Header ===== */
+.header {
+    text-align: center;
+    margin-bottom: 2.5rem;
+    padding: 1.5rem 0;
+}
+
+@media (max-width: 640px) {
+    .header {
+        margin-bottom: 1.5rem;
+        padding: 1rem 0;
+    }
+
+    .headerTitle {
+        font-size: 1.5rem !important;
+    }
+
+    .headerSubtitle {
+        font-size: 0.85rem;
+    }
+
+    .headerBadge {
+        font-size: 0.65rem;
+        padding: 0.25rem 0.7rem;
+    }
+}
+
+.headerBadge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.35rem 0.9rem;
+    border-radius: 2rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    background: linear-gradient(135deg, var(--primary-light), var(--secondary-light));
+    color: var(--primary);
     margin-bottom: 1rem;
 }
 
+.headerTitle {
+    font-size: clamp(1.8rem, 4vw, 3rem);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1.15;
+    background: linear-gradient(135deg, var(--foreground) 0%, var(--primary) 50%, var(--secondary) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 0.75rem;
+}
+
 .headerSubtitle {
-    font-size: 1.125rem;
+    font-size: 1rem;
     color: var(--foreground);
-    opacity: 0.8;
-    max-width: 600px;
+    opacity: 0.65;
+    max-width: 560px;
+    margin: 0 auto;
+    line-height: 1.6;
+}
+
+/* ===== Main Layout ===== */
+.mainLayout {
+    display: grid;
+    gap: 2rem;
+    align-items: start;
+    transition: all 0.4s ease;
+}
+
+/* Full-width form when no resume generated */
+.formOnly {
+    grid-template-columns: 1fr;
+    max-width: 720px;
     margin: 0 auto;
 }
 
-.mainLayout {
-    display: grid;
+.formOnly .previewSection {
+    display: none;
+}
+
+/* Side-by-side after generation */
+.withPreview {
     grid-template-columns: 1fr;
-    gap: 2rem;
-    align-items: start;
 }
 
 @media (min-width: 1024px) {
+    .withPreview {
+        grid-template-columns: 2fr 3fr;
+        gap: 2rem;
+    }
+}
+
+@media (min-width: 1440px) {
+    .withPreview {
+        grid-template-columns: 2fr 3fr;
+        gap: 2.5rem;
+    }
+}
+
+@media (max-width: 640px) {
     .mainLayout {
-        grid-template-columns: 1fr 1fr;
-        gap: 3rem;
+        gap: 1rem;
+    }
+
+    .previewSection {
+        position: static;
     }
 }
 
 .formSection {
-    order: 2;
+    order: 1;
 }
 
 .previewSection {
-    order: 1;
+    order: 2;
     position: sticky;
-    top: 2rem;
+    top: 1rem;
 }
 
-@media (min-width: 1024px) {
-    .formSection {
-        order: 1;
-    }
-
-    .previewSection {
-        order: 2;
-    }
-}
-
+/* ===== Error Message ===== */
 .errorMessage {
-    background: rgba(239, 68, 68, 0.1);
-    border: 1px solid var(--error);
+    background: rgba(239, 68, 68, 0.08);
+    border: 1px solid rgba(239, 68, 68, 0.2);
     color: var(--error);
-    padding: 1rem;
+    padding: 0.75rem 1rem;
     border-radius: var(--radius-md);
-    margin-bottom: 2rem;
+    margin-bottom: 1.5rem;
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    font-size: 0.875rem;
+    max-width: 720px;
+    margin-left: auto;
+    margin-right: auto;
 }
 
+.errorDismiss {
+    margin-left: auto;
+    background: none;
+    border: none;
+    color: var(--error);
+    font-size: 1.25rem;
+    cursor: pointer;
+    padding: 0 0.25rem;
+    opacity: 0.7;
+}
+
+.errorDismiss:hover {
+    opacity: 1;
+}
+
+/* ===== Footer ===== */
 .footer {
     text-align: center;
-    padding: 3rem 0;
+    padding: 2rem 0;
     margin-top: 3rem;
     border-top: 1px solid var(--surface-border);
     color: var(--foreground);
-    opacity: 0.6;
-    font-size: 0.875rem;
+    opacity: 0.45;
+    font-size: 0.8rem;
+}
+
+@media (max-width: 640px) {
+    .footer {
+        padding: 1.25rem 0;
+        margin-top: 2rem;
+        font-size: 0.7rem;
+    }
+
+    .errorMessage {
+        font-size: 0.78rem;
+    }
 }
