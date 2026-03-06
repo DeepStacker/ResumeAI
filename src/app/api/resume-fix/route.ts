@@ -144,6 +144,35 @@ Return ONLY valid JSON:
             }
         }
 
+        if (fixType === 'magicRepair') {
+            // High-level data sanitization and minor repairs
+            const prompt = `You are a resume data sanitizer. Your job is to fix minor formatting and validation issues in the provided resume data.
+            
+            ⛔ ABSOLUTE RULES:
+            - Fix malformed URLs (ensure they start with https:// if they look like domains)
+            - Normalize date formats if they look messy
+            - Ensure fields like 'year' are simple strings (e.g. "2023" or "2021-Present")
+            - If a required field like 'institution' is lowercase and messy, capitalize it properly
+            - NEVER invent new entries or remove existing ones
+            - Return the ENTIRE data object back with your fixes applied
+            
+            Input Data:
+            ${JSON.stringify(data, null, 2)}
+            
+            Return ONLY the valid JSON object. No commentary.`;
+
+            const response = await callAI({ messages: [{ role: 'user', content: prompt }], max_tokens: 3000 });
+            const text = typeof response === 'string' ? response : response?.content || '';
+            const cleaned = text.replace(/```json\s*/g, '').replace(/```/g, '').trim();
+
+            try {
+                const parsed = JSON.parse(cleaned);
+                return NextResponse.json({ fixedData: parsed });
+            } catch {
+                return NextResponse.json({ error: 'AI response was not valid JSON' }, { status: 500 });
+            }
+        }
+
         return NextResponse.json({ error: 'Unknown fix type' }, { status: 400 });
     } catch (err) {
         console.error('Resume fix error:', err);

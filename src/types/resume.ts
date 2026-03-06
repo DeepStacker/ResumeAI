@@ -53,6 +53,9 @@ export interface ResumeData {
     certifications: string[];
     languages: string[];
     template: ResumeTemplate;
+    title: string;
+    themeColor: string;
+    fontFamily: string;
 }
 
 // Factory helpers
@@ -103,4 +106,7 @@ export const emptyResumeData: ResumeData = {
     certifications: [],
     languages: [],
     template: 'professional',
+    title: 'My Professional Resume',
+    themeColor: '#000000',
+    fontFamily: 'Inter',
 };

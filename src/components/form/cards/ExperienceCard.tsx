@@ -172,7 +172,7 @@ export function ExperienceCard({
           type="button"
           onClick={() => onRewriteBullets(entry.id, entry)}
           disabled={bulletLoading === entry.id}
-          className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-accent text-accent hover:bg-accent/10 h-10 px-4 text-base gap-1.5"
+          className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-primary/30 text-primary hover:bg-primary/10 h-10 px-4 text-base gap-1.5"
           style={{ marginLeft: '1rem', marginTop: '0.2rem' }}
         >
           {bulletLoading === entry.id ? (
@@ -190,8 +190,8 @@ export function ExperienceCard({
             type="button"
             onClick={() => onGenerateRoleBullets(entry.id, entry.jobTitle)}
             disabled={bulletLoading === entry.id + '_generate'}
-            className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-accent text-accent hover:bg-accent/10 h-10 px-4 text-base gap-1.5"
-            style={{ marginLeft: '0.5rem', marginTop: '0.2rem', borderColor: 'var(--secondary)', color: 'var(--secondary)' }}
+            className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-primary/30 text-primary hover:bg-primary/10 h-10 px-4 text-base gap-1.5"
+            style={{ marginLeft: '0.5rem', marginTop: '0.2rem' }}
           >
             {bulletLoading === entry.id + '_generate' ? (
               <>

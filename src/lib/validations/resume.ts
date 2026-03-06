@@ -5,9 +5,9 @@ export const personalSchema = z.object({
     email: z.string().email('Invalid email address'),
     phone: z.string().optional(),
     location: z.string().optional(),
-    linkedin: z.string().url('Must be a valid URL').optional().or(z.literal('')),
-    github: z.string().url('Must be a valid URL').optional().or(z.literal('')),
-    portfolio: z.string().url('Must be a valid URL').optional().or(z.literal('')),
+    linkedin: z.string().optional().or(z.literal('')),
+    github: z.string().optional().or(z.literal('')),
+    portfolio: z.string().optional().or(z.literal('')),
     profileImage: z.string().optional(),
 });
 
@@ -36,7 +36,7 @@ export const projectSchema = z.object({
     name: z.string().min(2, 'Project name is required').or(z.literal('')),
     techStack: z.string().min(2, 'Tech stack is required').or(z.literal('')),
     description: z.string().min(10, 'Description must be at least 10 characters').or(z.literal('')),
-    link: z.string().url('Must be a valid URL').optional().or(z.literal('')),
+    link: z.string().optional().or(z.literal('')),
 });
 
 export const resumeSchema = z.object({
@@ -52,7 +52,7 @@ export const resumeSchema = z.object({
     themeColor: z.string(),
     fontFamily: z.string(),
     style: z.record(z.string(), z.any()).optional(),
-    template: z.enum(['modern', 'classic', 'minimal']),
+    template: z.enum(['modern', 'professional', 'minimal']),
 });
 
 export type ResumeFormValues = z.infer<typeof resumeSchema>;

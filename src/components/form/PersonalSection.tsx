@@ -1,5 +1,5 @@
 import React, { useRef, memo } from 'react';
-import { User, Mail, Phone, MapPin, Linkedin, Github, Globe, Trash2 } from 'lucide-react';
+import { User, Mail, Phone, MapPin, Linkedin, Github, Globe, Trash2, Sparkles } from 'lucide-react';
 import { DebouncedInput } from '@/components/DebouncedInput';
 import { ResumeData } from '@/types/resume';
 
@@ -82,9 +82,20 @@ export const PersonalSection = memo(function PersonalSection({ data, template, u
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="grid gap-2">
-          <label className="text-base font-semibold leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-2"><Linkedin size={14} /> LinkedIn</label>
+          <label className="text-base font-semibold leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-2">
+            <Linkedin size={14} /> LinkedIn
+            {(data.linkedin && !data.linkedin.startsWith('http')) && (
+              <button 
+                type="button"
+                onClick={() => updatePersonal('linkedin', `https://${data.linkedin.replace(/^(http:\/\/|https:\/\/)/, '')}`)}
+                className="ml-auto text-[0.7rem] flex items-center gap-1 text-primary hover:underline font-normal"
+              >
+                <Sparkles size={10} /> Fix with AI
+              </button>
+            )}
+          </label>
           <DebouncedInput
-            type="url"
+            type="text"
             value={data.linkedin}
             onChangeValue={(value) => updatePersonal('linkedin', value)}
             className="flex w-full rounded-md border border-input bg-background px-4 py-3 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
@@ -93,9 +104,20 @@ export const PersonalSection = memo(function PersonalSection({ data, template, u
           />
         </div>
         <div className="grid gap-2">
-          <label className="text-base font-semibold leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-2"><Github size={14} /> GitHub</label>
+          <label className="text-base font-semibold leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-2">
+            <Github size={14} /> GitHub
+            {(data.github && !data.github.startsWith('http')) && (
+              <button 
+                type="button"
+                onClick={() => updatePersonal('github', `https://${data.github.replace(/^(http:\/\/|https:\/\/)/, '')}`)}
+                className="ml-auto text-[0.7rem] flex items-center gap-1 text-primary hover:underline font-normal"
+              >
+                <Sparkles size={10} /> Fix with AI
+              </button>
+            )}
+          </label>
           <DebouncedInput
-            type="url"
+            type="text"
             value={data.github}
             onChangeValue={(value) => updatePersonal('github', value)}
             className="flex w-full rounded-md border border-input bg-background px-4 py-3 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
@@ -106,9 +128,20 @@ export const PersonalSection = memo(function PersonalSection({ data, template, u
       </div>
 
       <div className="grid gap-2">
-        <label className="text-base font-semibold leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-2"><Globe size={14} /> Portfolio / Website</label>
+        <label className="text-base font-semibold leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-2">
+          <Globe size={14} /> Portfolio / Website
+          {(data.portfolio && !data.portfolio.startsWith('http')) && (
+            <button 
+              type="button"
+              onClick={() => updatePersonal('portfolio', `https://${data.portfolio.replace(/^(http:\/\/|https:\/\/)/, '')}`)}
+              className="ml-auto text-[0.7rem] flex items-center gap-1 text-primary hover:underline font-normal"
+            >
+              <Sparkles size={10} /> Fix with AI
+            </button>
+          )}
+        </label>
         <DebouncedInput
-          type="url"
+          type="text"
           value={data.portfolio}
           onChangeValue={(value) => updatePersonal('portfolio', value)}
           className="flex w-full rounded-md border border-input bg-background px-4 py-3 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"

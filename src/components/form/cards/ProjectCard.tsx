@@ -79,7 +79,7 @@ export function ProjectCard({
               type="button"
               onClick={() => onSuggestTechStack(proj.id, proj.description)}
               disabled={loadingSuggestion === proj.id + '_tech' || !proj.description}
-              className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-accent text-accent hover:bg-accent/10 h-10 px-4 text-base gap-1.5"
+              className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-primary/30 text-primary hover:bg-primary/10 h-10 px-4 text-base gap-1.5"
               style={{ padding: '0.2rem 0.5rem', fontSize: '0.75rem' }}
             >
               {loadingSuggestion === proj.id + '_tech' ? (
@@ -110,7 +110,7 @@ export function ProjectCard({
             type="button"
             onClick={() => onRewriteDesc(proj.id, proj.description)}
             disabled={loadingSuggestion === proj.id || !proj.description}
-            className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-accent text-accent hover:bg-accent/10 h-10 px-4 text-base gap-1.5"
+            className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-primary/30 text-primary hover:bg-primary/10 h-10 px-4 text-base gap-1.5"
             style={{ padding: '0.2rem 0.5rem', fontSize: '0.75rem' }}
           >
             {loadingSuggestion === proj.id ? (
