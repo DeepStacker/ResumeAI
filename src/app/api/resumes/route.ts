@@ -67,3 +67,29 @@ export async function DELETE(req: Request) {
     await prisma.resume.delete({ where: { id } });
     return NextResponse.json({ success: true });
 }
+
+// PUT: update an existing resume
+export async function PUT(req: Request) {
+    const session = await getServerSession(authOptions);
+    if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const userId = (session.user as any).id;
+    const { id, title, data, markdown } = await req.json();
+
+    if (!id) return NextResponse.json({ error: 'Resume ID required' }, { status: 400 });
+
+    // Verify ownership
+    const existing = await prisma.resume.findFirst({ where: { id, userId } });
+    if (!existing) return NextResponse.json({ error: 'Resume not found or unauthorized' }, { status: 404 });
+
+    const updated = await prisma.resume.update({
+        where: { id },
+        data: {
+            title: title || existing.title,
+            data: data || existing.data,
+            markdown: markdown !== undefined ? markdown : existing.markdown,
+        },
+    });
+
+    return NextResponse.json({ resume: updated });
+}

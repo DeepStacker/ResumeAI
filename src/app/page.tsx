@@ -41,22 +41,8 @@ export default function LandingPage() {
           </div>
         </div>
 
-        <div className="hero-visual glass-panel">
-          <div className="visual-code-mock">
-            <div className="mock-dot red"></div>
-            <div className="mock-dot yellow"></div>
-            <div className="mock-dot green"></div>
-          </div>
-          <div className="visual-content">
-            <div className="mock-line title"></div>
-            <div className="mock-line"></div>
-            <div className="mock-line short"></div>
-            <br />
-            <div className="mock-line"></div>
-            <div className="mock-line highlight"></div>
-            <div className="mock-line"></div>
-          </div>
-          <div className="visual-badge"><Target size={14} /> ATS Score: 98/100</div>
+        <div className="hero-visual glass-panel" style={{ padding: 0, overflow: 'hidden' }}>
+          <img src="/images/hero.png" alt="Resume Builder Dashboard" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
         </div>
       </section>
 
@@ -208,17 +194,23 @@ export default function LandingPage() {
         </div>
         <div className="templates-grid">
           <div className="template-mockup glass-panel">
-            <div className="template-preview professional-preview"></div>
+            <div className="template-preview professional-preview" style={{ padding: 0, overflow: 'hidden', border: 'none' }}>
+              <img src="/images/professional.png" alt="Professional Template" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            </div>
             <h4>Professional</h4>
             <p>Clean, traditional corporate layout for finance, law, and enterprise roles.</p>
           </div>
           <div className="template-mockup glass-panel">
-            <div className="template-preview modern-preview"></div>
+            <div className="template-preview modern-preview" style={{ padding: 0, overflow: 'hidden', border: 'none' }}>
+              <img src="/images/modern.png" alt="Modern Template" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            </div>
             <h4>Modern</h4>
             <p>Contemporary design with accent sections. Perfect for tech and marketing.</p>
           </div>
           <div className="template-mockup glass-panel">
-            <div className="template-preview minimal-preview"></div>
+            <div className="template-preview minimal-preview" style={{ padding: 0, overflow: 'hidden', border: 'none' }}>
+              <img src="/images/minimal.png" alt="Minimal Template" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            </div>
             <h4>Minimal</h4>
             <p>Ultra-clean, maximally ATS-parseable layout focused on content.</p>
           </div>

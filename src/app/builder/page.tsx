@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import ResumeForm from '@/components/ResumeForm';
 import ResumePreview from '@/components/ResumePreview';
 import { ResumeData } from '@/types/resume';
+import { useResumeStore } from '@/store/useResumeStore';
 import styles from './page.module.css';
 import { AlertCircle } from 'lucide-react';
 
@@ -45,13 +46,20 @@ export default function Home() {
         body: JSON.stringify(data),
       });
 
+      const responseData = await response.json();
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+        throw new Error(responseData.error || `HTTP error! status: ${response.status}`);
       }
 
-      const result = await response.json();
-      setResumeMarkdown(result.resume);
+      // The new API returns perfectly tailored JSON ResumeData
+      if (responseData.data) {
+        useResumeStore.getState().setResumeData(responseData.data);
+      }
+      if (responseData.resumeId) {
+        useResumeStore.getState().setCurrentResumeId(responseData.resumeId);
+      }
+      
+      setResumeMarkdown('# Generated'); // Set a truthy value to trigger the preview pane
 
       if (window.innerWidth < 1024) {
         setTimeout(() => {

@@ -14,9 +14,11 @@ import {
 interface ResumeState {
     data: ResumeData;
     step: number;
+    currentResumeId: string | null;
 
     // Actions
     setStep: (step: number) => void;
+    setCurrentResumeId: (id: string | null) => void;
     updatePersonal: (field: keyof ResumeData['personal'], value: string) => void;
     updateField: <K extends keyof ResumeData>(field: K, value: ResumeData[K]) => void;
 
@@ -50,8 +52,10 @@ export const useResumeStore = create<ResumeState>()(
         (set) => ({
             data: emptyResumeData,
             step: 0,
+            currentResumeId: null,
 
             setStep: (step) => set({ step }),
+            setCurrentResumeId: (id) => set({ currentResumeId: id }),
 
             updatePersonal: (field, value) =>
                 set((state) => ({

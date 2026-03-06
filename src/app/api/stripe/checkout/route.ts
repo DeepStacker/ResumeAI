@@ -3,10 +3,6 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import Stripe from 'stripe';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-    apiVersion: '2025-02-24.acacia' as any,
-});
-
 // Mapping of packages to Stripe prices or raw amounts
 const PACKAGES: Record<string, { amount: number; tokens: number; name: string }> = {
     starter: { amount: 500, tokens: 50, name: 'Starter Token Bundle' }, // $5.00
@@ -20,6 +16,13 @@ export async function POST(req: Request) {
         if (!session?.user?.id || !session?.user?.email) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
+
+        const stripeKey = process.env.STRIPE_SECRET_KEY;
+        if (!stripeKey) {
+            return NextResponse.json({ error: 'Stripe is not configured on the server' }, { status: 500 });
+        }
+
+        const stripe = new Stripe(stripeKey, { apiVersion: '2025-02-24.acacia' as any });
 
         const { packageId } = await req.json();
         const pkg = PACKAGES[packageId];

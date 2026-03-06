@@ -2,12 +2,18 @@
 
 import React, { useState, useCallback, useRef } from 'react';
 import {
-  Briefcase, User, MapPin, GraduationCap, Code, FileText, Send, Upload,
-  Sparkles, ChevronRight, ChevronLeft, X, Check, Loader2, Plus, Trash2,
-  Globe, Mail, Phone, Linkedin, Github, Target, ClipboardList, Languages, Award, RefreshCcw
+  Send, Upload, Sparkles, ChevronRight, ChevronLeft, Check, Loader2, RefreshCcw,
+  User, Target, Code, Briefcase, Globe, GraduationCap, X, Plus, Award, Languages, FileText,
+  BarChart3, AlertTriangle, CheckCircle2, Shield, Zap, ChevronDown, ChevronUp
 } from 'lucide-react';
-import { ResumeData, ResumeTemplate, WorkEntry, ProjectEntry, EducationEntry } from '@/types/resume';
+import { ResumeData, ResumeTemplate, WorkEntry } from '@/types/resume';
 import { useResumeStore } from '@/store/useResumeStore';
+import { DebouncedInput } from '@/components/DebouncedInput';
+import { PersonalSection } from '@/components/form/PersonalSection';
+import { TargetAndSkillsSection } from '@/components/form/TargetAndJDSection';
+import { ExperienceSection } from '@/components/form/ExperienceSection';
+import { ProjectsSection } from '@/components/form/ProjectsSection';
+import { EducationSection } from '@/components/form/EducationSection';
 
 interface ResumeFormProps {
   onSubmit: (data: ResumeData) => void;
@@ -50,6 +56,13 @@ export default function ResumeForm({ onSubmit, isLoading }: ResumeFormProps) {
 
   // Custom modal state
   const [showConfirmReset, setShowConfirmReset] = useState(false);
+  const [isSavingDraft, setIsSavingDraft] = useState(false);
+
+  // Resume readiness review
+  const [reviewResult, setReviewResult] = useState<any>(null);
+  const [reviewLoading, setReviewLoading] = useState(false);
+  const [fixingType, setFixingType] = useState<string | null>(null);
+  const [showBulletDetails, setShowBulletDetails] = useState(false);
 
   // Upload
   const [isUploading, setIsUploading] = useState(false);
@@ -61,6 +74,9 @@ export default function ResumeForm({ onSubmit, isLoading }: ResumeFormProps) {
   const [skillInput, setSkillInput] = useState('');
   const [certInput, setCertInput] = useState('');
   const [langInput, setLangInput] = useState('');
+
+  // Image upload
+  const profileImageRef = useRef<HTMLInputElement>(null);
 
   // --- Helpers ---
   const handleAddChip = (field: 'skills' | 'certifications' | 'languages', input: string, setInput: (v: string) => void) => {
@@ -255,6 +271,32 @@ export default function ResumeForm({ onSubmit, isLoading }: ResumeFormProps) {
     setLoadingSuggestion(null);
   };
   
+  const handleSaveDraft = async () => {
+    setIsSavingDraft(true);
+    try {
+      const res = await fetch('/api/resumes', {
+        method: store.currentResumeId ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          id: store.currentResumeId, 
+          title: `${data.targetRole || 'Untitled'} Resume`, 
+          data: data,
+          markdown: '# Generated' // Placeholder since we now use structured JSON
+        }),
+      });
+      const result = await res.json();
+      if (result.resume?.id) {
+        store.setCurrentResumeId(result.resume.id);
+        alert('Resume draft saved successfully!');
+      }
+    } catch (err) {
+      console.error('Failed to save draft:', err);
+      alert('Failed to save draft.');
+    } finally {
+      setIsSavingDraft(false);
+    }
+  };
+
   const applyTargetRoleSuggestion = () => {
     const s = suggestions['targetRoleIdeation'];
     if (!s) return;
@@ -368,9 +410,108 @@ export default function ResumeForm({ onSubmit, isLoading }: ResumeFormProps) {
     if (file) processFile(file);
   };
 
+  const handleProfileImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      alert("Image must be smaller than 2MB.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      store.updatePersonal('profileImage', reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSubmit(data);
+  };
+
+  const handleReviewReadiness = async () => {
+    setReviewLoading(true);
+    setReviewResult(null);
+    try {
+      const res = await fetch('/api/resume-review', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      const result = await res.json();
+      if (res.ok) {
+        setReviewResult(result);
+      }
+    } catch { /* silent */ }
+    setReviewLoading(false);
+  };
+
+  const handleAutoFix = async (fixType: string) => {
+    setFixingType(fixType);
+    try {
+      const res = await fetch('/api/resume-fix', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fixType, data }),
+      });
+      const result = await res.json();
+      if (!res.ok) { setFixingType(null); return; }
+
+      if (fixType === 'bullets' && result.fixedExperience) {
+        const fixedList = result.fixedExperience;
+        for (let i = 0; i < fixedList.length; i++) {
+          const fixed = fixedList[i];
+          if (!Array.isArray(fixed.bullets) || fixed.bullets.length === 0) continue;
+          // Try by ID first, fall back to index matching
+          const byId = data.experience.find((e: any) => e.id === fixed.id);
+          const target = byId || data.experience[i];
+          if (target) {
+            store.updateWork(target.id, 'bullets', fixed.bullets);
+          }
+        }
+      }
+      if (fixType === 'summary' && result.summary) {
+        store.updateField('summary', result.summary);
+      }
+      if (fixType === 'projects' && result.fixedProjects) {
+        const fixedList = result.fixedProjects;
+        for (let i = 0; i < fixedList.length; i++) {
+          const fixed = fixedList[i];
+          if (!fixed.description) continue;
+          const byId = data.projects.find((p: any) => p.id === fixed.id);
+          const target = byId || data.projects[i];
+          if (target) {
+            store.updateProject(target.id, 'description', fixed.description);
+          }
+        }
+      }
+
+      // Re-run readiness check after fix (delay for store updates)
+      setTimeout(() => handleReviewReadiness(), 800);
+    } catch { /* silent */ }
+    setFixingType(null);
+  };
+
+  const handleApplyAllFixes = async () => {
+    setFixingType('all');
+    const fixTypes: string[] = [];
+    if (reviewResult?.sectionChecks) {
+      for (const s of reviewResult.sectionChecks) {
+        if (s.fixable && s.fixType && !fixTypes.includes(s.fixType)) {
+          fixTypes.push(s.fixType);
+        }
+      }
+    }
+    if (reviewResult?.bulletIssues?.length > 0 && !fixTypes.includes('bullets')) {
+      fixTypes.push('bullets');
+    }
+    for (const ft of fixTypes) {
+      setFixingType(ft);
+      await handleAutoFix(ft);
+    }
+    setFixingType(null);
   };
 
   const nextStep = () => setStep(Math.min(step + 1, STEPS.length - 1));
@@ -461,64 +602,20 @@ export default function ResumeForm({ onSubmit, isLoading }: ResumeFormProps) {
         )}
 
         {/* === STEP 1: Personal === */}
-        {step === 1 && (
-          <div className="step-content animate-fade-in">
-            <div className="form-grid">
-              <div className="input-group">
-                <label className="input-label"><User size={14} /> Full Name <span className="required">*</span></label>
-                <input type="text" value={data.personal.fullName} onChange={e => store.updatePersonal('fullName', e.target.value)} className="input-field" placeholder="Jane Doe" required />
-              </div>
-              <div className="input-group">
-                <label className="input-label"><Mail size={14} /> Email <span className="required">*</span></label>
-                <input type="email" value={data.personal.email} onChange={e => store.updatePersonal('email', e.target.value)} className="input-field" placeholder="jane@example.com" />
-              </div>
-            </div>
-            <div className="form-grid">
-              <div className="input-group">
-                <label className="input-label"><Phone size={14} /> Phone</label>
-                <input type="tel" value={data.personal.phone} onChange={e => store.updatePersonal('phone', e.target.value)} className="input-field" placeholder="+1 234 567 8900" />
-              </div>
-              <div className="input-group">
-                <label className="input-label"><MapPin size={14} /> Location</label>
-                <input type="text" value={data.personal.location} onChange={e => store.updatePersonal('location', e.target.value)} className="input-field" placeholder="San Francisco, CA" />
-              </div>
-            </div>
-            <div className="form-grid">
-              <div className="input-group">
-                <label className="input-label"><Linkedin size={14} /> LinkedIn</label>
-                <input type="url" value={data.personal.linkedin} onChange={e => store.updatePersonal('linkedin', e.target.value)} className="input-field" placeholder="linkedin.com/in/janedoe" />
-              </div>
-              <div className="input-group">
-                <label className="input-label"><Github size={14} /> GitHub</label>
-                <input type="url" value={data.personal.github} onChange={e => store.updatePersonal('github', e.target.value)} className="input-field" placeholder="github.com/janedoe" />
-              </div>
-            </div>
-            <div className="input-group">
-              <label className="input-label"><Globe size={14} /> Portfolio / Website</label>
-              <input type="url" value={data.personal.portfolio} onChange={e => store.updatePersonal('portfolio', e.target.value)} className="input-field" placeholder="https://janedoe.dev" />
-            </div>
-          </div>
-        )}
+        {step === 1 && <PersonalSection />}
 
         {/* === STEP 2: Target & JD === */}
         {step === 2 && (
           <div className="step-content animate-fade-in">
-            <div className="input-group">
-              <div className="label-row">
-                <label className="input-label"><Target size={14} /> Target Job Title <span className="required">*</span></label>
-                <button type="button" onClick={handleSuggestTargetRoles} disabled={loadingSuggestion === 'targetRoleIdeation'} className="ai-autofill-btn" style={{ padding: '0.2rem 0.5rem', fontSize: '0.75rem' }}>
-                    {loadingSuggestion === 'targetRoleIdeation' ? <><Loader2 size={12} className="spin-icon" /> Analyzing...</> : <><Sparkles size={12} /> Suggest based on history</>}
-                </button>
-              </div>
-              <input type="text" value={data.targetRole} onChange={e => store.updateField('targetRole', e.target.value)} className="input-field" placeholder="Senior Software Engineer" required />
-              <SuggestionBubble field="targetRoleIdeation" />
-              <p className="field-hint">AI uses this to tailor content and ATS keywords.</p>
-            </div>
-            <div className="input-group">
-              <label className="input-label"><ClipboardList size={14} /> Job Description <span className="badge-optional">optional</span></label>
-              <textarea value={data.jobDescription} onChange={e => store.updateField('jobDescription', e.target.value)} className="input-field jd-textarea" rows={10} placeholder="Paste the full job description here for maximum ATS optimization..." />
-              <p className="field-hint">Pasting a JD lets AI extract keywords and score your resume against the role.</p>
-            </div>
+            <TargetAndSkillsSection
+              loadingSuggestion={loadingSuggestion}
+              fetchSuggestion={fetchSuggestion}
+              handleAddChip={handleAddChip}
+              onSkillsChange={onSkillsChange}
+              SuggestionBubble={SuggestionBubble}
+              skillInput={skillInput}
+              setSkillInput={setSkillInput}
+            />
           </div>
         )}
 
@@ -533,9 +630,9 @@ export default function ResumeForm({ onSubmit, isLoading }: ResumeFormProps) {
                 </button>
               </div>
               <div className="skill-input-row">
-                <input type="text" value={skillInput} onChange={e => setSkillInput(e.target.value)}
+                <DebouncedInput type="text" value={skillInput} onChangeValue={val => setSkillInput(val)}
                   onKeyDown={e => { if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); handleAddChip('skills', skillInput, setSkillInput); onSkillsChange(); } }}
-                  className="input-field" placeholder="Type a skill and press Enter" />
+                  className="input-field" placeholder="Type a skill and press Enter" delay={10} />
                 <button type="button" onClick={() => { handleAddChip('skills', skillInput, setSkillInput); onSkillsChange(); }} className="btn-icon"><Plus size={16} /></button>
               </div>
               {data.skills.length > 0 && (
@@ -557,146 +654,23 @@ export default function ResumeForm({ onSubmit, isLoading }: ResumeFormProps) {
 
         {/* === STEP 4: Experience === */}
         {step === 4 && (
-          <div className="step-content animate-fade-in">
-            {data.experience.map((entry, idx) => (
-              <div key={entry.id} className="entry-card">
-                <div className="entry-card-header">
-                  <span className="entry-card-number">#{idx + 1}</span>
-                  {data.experience.length > 1 && (
-                    <button type="button" onClick={() => store.removeWorkEntry(entry.id)} className="entry-remove-btn"><Trash2 size={14} /></button>
-                  )}
-                </div>
-                <div className="form-grid">
-                  <div className="input-group">
-                    <label className="input-label-sm">Job Title</label>
-                    <input type="text" value={entry.jobTitle} onChange={e => store.updateWork(entry.id, 'jobTitle', e.target.value)} className="input-field" placeholder="Software Engineer" />
-                  </div>
-                  <div className="input-group">
-                    <label className="input-label-sm">Company</label>
-                    <input type="text" value={entry.company} onChange={e => store.updateWork(entry.id, 'company', e.target.value)} className="input-field" placeholder="Google" />
-                  </div>
-                </div>
-                <div className="form-grid form-grid-3">
-                  <div className="input-group">
-                    <label className="input-label-sm">Location</label>
-                    <input type="text" value={entry.location} onChange={e => store.updateWork(entry.id, 'location', e.target.value)} className="input-field" placeholder="Mountain View, CA" />
-                  </div>
-                  <div className="input-group">
-                    <label className="input-label-sm">Start</label>
-                    <input type="text" value={entry.startDate} onChange={e => store.updateWork(entry.id, 'startDate', e.target.value)} className="input-field" placeholder="Jan 2022" />
-                  </div>
-                  <div className="input-group">
-                    <label className="input-label-sm">End</label>
-                    <input type="text" value={entry.endDate} onChange={e => store.updateWork(entry.id, 'endDate', e.target.value)} className="input-field" placeholder="Present" />
-                  </div>
-                </div>
-                <div className="input-group">
-                  <label className="input-label-sm">Achievement Bullets</label>
-                  {entry.bullets.map((b, bi) => (
-                    <div key={bi} className="bullet-row">
-                      <span className="bullet-marker">▸</span>
-                      <input type="text" value={b} onChange={e => store.updateBullet(entry.id, bi, e.target.value)} className="input-field bullet-input" placeholder="Accomplished X by doing Y, resulting in Z..." />
-                      {entry.bullets.length > 1 && <button type="button" onClick={() => store.removeBullet(entry.id, bi)} className="bullet-remove"><X size={12} /></button>}
-                    </div>
-                  ))}
-                  <button type="button" onClick={() => store.addBullet(entry.id)} className="add-inline-btn"><Plus size={14} /> Add bullet</button>
-                  <button type="button" onClick={() => handleRewriteBullets(entry.id, entry)} disabled={bulletLoading === entry.id} className="ai-autofill-btn" style={{ marginLeft: '1rem', marginTop: '0.2rem' }}>
-                    {bulletLoading === entry.id ? <><Loader2 size={13} className="spin-icon" /> Rewriting...</> : <><Sparkles size={13} /> AI Rewrite (XYZ)</>}
-                  </button>
-                  {entry.jobTitle && (
-                    <button type="button" onClick={() => handleGenerateRoleBullets(entry.id, entry.jobTitle)} disabled={bulletLoading === entry.id + '_generate'} className="ai-autofill-btn" style={{ marginLeft: '0.5rem', marginTop: '0.2rem', borderColor: 'var(--secondary)', color: 'var(--secondary)' }}>
-                      {bulletLoading === entry.id + '_generate' ? <><Loader2 size={13} className="spin-icon" /> Thinking...</> : <><Sparkles size={13} /> Generate Ideas</>}
-                    </button>
-                  )}
-                </div>
-              </div>
-            ))}
-            <button type="button" onClick={store.addWorkEntry} className="btn-secondary full-width"><Plus size={16} /> Add Work Experience</button>
-          </div>
+          <ExperienceSection 
+             handleRewriteBullets={handleRewriteBullets} 
+             handleGenerateRoleBullets={handleGenerateRoleBullets} 
+             bulletLoading={bulletLoading} 
+          />
         )}
 
         {/* === STEP 5: Projects === */}
         {step === 5 && (
-          <div className="step-content animate-fade-in">
-            {data.projects.length === 0 && (
-              <div className="empty-section-hint">
-                <Globe size={24} color="var(--primary)" style={{ opacity: 0.4 }} />
-                <p>No projects yet. Add your notable projects to stand out.</p>
-              </div>
-            )}
-            {data.projects.map((proj, idx) => (
-              <div key={proj.id} className="entry-card">
-                <div className="entry-card-header">
-                  <span className="entry-card-number">#{idx + 1}</span>
-                  <button type="button" onClick={() => store.removeProject(proj.id)} className="entry-remove-btn"><Trash2 size={14} /></button>
-                </div>
-                <div className="form-grid">
-                  <div className="input-group">
-                    <label className="input-label-sm">Project Name</label>
-                    <input type="text" value={proj.name} onChange={e => store.updateProject(proj.id, 'name', e.target.value)} className="input-field" placeholder="AI Resume Builder" />
-                  </div>
-                  <div className="input-group">
-                    <label className="input-label-sm">Tech Stack</label>
-                    <input type="text" value={proj.techStack} onChange={e => store.updateProject(proj.id, 'techStack', e.target.value)} className="input-field" placeholder="React, Next.js, Python" />
-                  </div>
-                </div>
-                <div className="input-group">
-                  <div className="label-row">
-                    <label className="input-label-sm">Description</label>
-                    <button type="button" onClick={() => handleRewriteProjectDesc(proj.id, proj.description)} disabled={loadingSuggestion === proj.id || !proj.description} className="ai-autofill-btn" style={{ padding: '0.2rem 0.5rem', fontSize: '0.75rem' }}>
-                      {loadingSuggestion === proj.id ? <><Loader2 size={12} className="spin-icon" /> Rewriting...</> : <><Sparkles size={12} /> AI Rewrite</>}
-                    </button>
-                  </div>
-                  <textarea value={proj.description} onChange={e => store.updateProject(proj.id, 'description', e.target.value)} className="input-field" rows={2} placeholder="Built a full-stack application that..." />
-                </div>
-                <div className="input-group">
-                  <label className="input-label-sm">Link</label>
-                  <input type="url" value={proj.link} onChange={e => store.updateProject(proj.id, 'link', e.target.value)} className="input-field" placeholder="https://github.com/..." />
-                </div>
-              </div>
-            ))}
-            <button type="button" onClick={store.addProject} className="btn-secondary full-width"><Plus size={16} /> Add Project</button>
-          </div>
+          <ProjectsSection 
+            handleRewriteProjectDesc={handleRewriteProjectDesc}
+            loadingSuggestion={loadingSuggestion}
+          />
         )}
 
         {/* === STEP 6: Education === */}
-        {step === 6 && (
-          <div className="step-content animate-fade-in">
-            {data.education.map((edu, idx) => (
-              <div key={edu.id} className="entry-card">
-                <div className="entry-card-header">
-                  <span className="entry-card-number">#{idx + 1}</span>
-                  {data.education.length > 1 && <button type="button" onClick={() => store.removeEducation(edu.id)} className="entry-remove-btn"><Trash2 size={14} /></button>}
-                </div>
-                <div className="form-grid">
-                  <div className="input-group">
-                    <label className="input-label-sm">Degree / Program</label>
-                    <input type="text" value={edu.degree} onChange={e => store.updateEducation(edu.id, 'degree', e.target.value)} className="input-field" placeholder="B.S. Computer Science" />
-                  </div>
-                  <div className="input-group">
-                    <label className="input-label-sm">Institution</label>
-                    <input type="text" value={edu.institution} onChange={e => store.updateEducation(edu.id, 'institution', e.target.value)} className="input-field" placeholder="Stanford University" />
-                  </div>
-                </div>
-                <div className="form-grid form-grid-3">
-                  <div className="input-group">
-                    <label className="input-label-sm">Year</label>
-                    <input type="text" value={edu.year} onChange={e => store.updateEducation(edu.id, 'year', e.target.value)} className="input-field" placeholder="2020" />
-                  </div>
-                  <div className="input-group">
-                    <label className="input-label-sm">GPA (optional)</label>
-                    <input type="text" value={edu.gpa} onChange={e => store.updateEducation(edu.id, 'gpa', e.target.value)} className="input-field" placeholder="3.9/4.0" />
-                  </div>
-                  <div className="input-group">
-                    <label className="input-label-sm">Coursework (optional)</label>
-                    <input type="text" value={(edu as any).coursework || ''} onChange={e => store.updateEducation(edu.id, 'coursework' as any, e.target.value)} className="input-field" placeholder="Data Structures, ML, Databases" />
-                  </div>
-                </div>
-              </div>
-            ))}
-            <button type="button" onClick={store.addEducation} className="btn-secondary full-width"><Plus size={16} /> Add Education</button>
-          </div>
-        )}
+        {step === 6 && <EducationSection />}
 
         {/* === STEP 7: Review & Generate === */}
         {step === 7 && (
@@ -745,6 +719,149 @@ export default function ResumeForm({ onSubmit, isLoading }: ResumeFormProps) {
               )}
             </div>
 
+            {/* Resume Readiness Check */}
+            <div className="input-group">
+              <div className="label-row">
+                <label className="input-label"><BarChart3 size={14} /> Resume Readiness Check</label>
+                <button type="button" onClick={handleReviewReadiness} disabled={reviewLoading} className="ai-autofill-btn">
+                  {reviewLoading ? <><Loader2 size={13} className="spin-icon" /> Analyzing...</> : <><Shield size={13} /> Check Readiness</>}
+                </button>
+              </div>
+              <p className="field-hint">Free ATS analysis with detailed breakdown. No credits charged.</p>
+
+              {reviewResult && (
+                <div className="animate-fade-in" style={{ marginTop: '0.75rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--surface-border)', overflow: 'hidden' }}>
+
+                  {/* Score Header */}
+                  <div style={{ padding: '1rem 1.25rem', background: 'var(--surface)', display: 'flex', alignItems: 'center', gap: '1rem', borderBottom: '1px solid var(--surface-border)' }}>
+                    <div style={{
+                      width: '60px', height: '60px', borderRadius: '50%',
+                      background: `conic-gradient(${reviewResult.projectedScore >= 70 ? '#10b981' : reviewResult.projectedScore >= 50 ? '#f59e0b' : '#ef4444'} ${reviewResult.projectedScore * 3.6}deg, var(--surface-border) 0deg)`,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
+                    }}>
+                      <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--background)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <span style={{ fontWeight: 700, fontSize: '1.05rem', color: reviewResult.projectedScore >= 70 ? '#10b981' : reviewResult.projectedScore >= 50 ? '#f59e0b' : '#ef4444' }}>{reviewResult.projectedScore}%</span>
+                      </div>
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <p style={{ fontWeight: 600, fontSize: '0.95rem', color: 'var(--foreground)', marginBottom: '0.15rem' }}>Projected ATS Score</p>
+                      <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                        {reviewResult.projectedScore >= 70 ? 'Strong resume! Ready to generate.' : reviewResult.projectedScore >= 50 ? 'Good start — apply fixes below to boost your score.' : 'Needs improvement — fix the issues below.'}
+                      </p>
+                    </div>
+                    {reviewResult.canAutoFix && (
+                      <button type="button" onClick={handleApplyAllFixes} disabled={!!fixingType} className="btn-primary" style={{ fontSize: '0.78rem', padding: '0.5rem 0.85rem', whiteSpace: 'nowrap' }}>
+                        {fixingType ? <><Loader2 size={13} className="spin-icon" /> Fixing...</> : <><Zap size={13} /> Apply All Fixes</>}
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Component Score Bars */}
+                  <div style={{ padding: '0.75rem 1.25rem', borderBottom: '1px solid var(--surface-border)' }}>
+                    <p style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>Score Breakdown</p>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.4rem' }}>
+                      {[
+                        { label: 'Keywords', score: reviewResult.keywordScore, w: '35%' },
+                        { label: 'Sections', score: reviewResult.sectionScore, w: '20%' },
+                        { label: 'Bullets', score: reviewResult.bulletScore, w: '15%' },
+                        { label: 'Readability', score: reviewResult.readabilityScore, w: '15%' },
+                        { label: 'Format', score: reviewResult.formatScore, w: '15%' },
+                      ].map(c => (
+                        <div key={c.label} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.75rem' }}>
+                          <span style={{ width: '75px', color: 'var(--text-muted)', flexShrink: 0 }}>{c.label} <span style={{ opacity: 0.6 }}>({c.w})</span></span>
+                          <div style={{ flex: 1, height: '5px', borderRadius: '3px', background: 'var(--surface-border)', overflow: 'hidden' }}>
+                            <div style={{ height: '100%', width: `${c.score}%`, background: c.score >= 70 ? '#10b981' : c.score >= 50 ? '#f59e0b' : '#ef4444', borderRadius: '3px', transition: 'width 0.5s ease' }} />
+                          </div>
+                          <span style={{ fontWeight: 700, width: '28px', textAlign: 'right', fontSize: '0.73rem', color: c.score >= 70 ? '#10b981' : c.score >= 50 ? '#f59e0b' : '#ef4444' }}>{c.score}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Section-by-Section Audit */}
+                  {reviewResult.sectionChecks && (
+                    <div style={{ padding: '0.75rem 1.25rem', borderBottom: '1px solid var(--surface-border)' }}>
+                      <p style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>Section Audit</p>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                        {reviewResult.sectionChecks.map((s: any, i: number) => (
+                          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.78rem', padding: '0.3rem 0' }}>
+                            <span style={{ flexShrink: 0 }}>
+                              {s.status === 'pass' ? <CheckCircle2 size={14} style={{ color: '#10b981' }} /> : s.status === 'warn' ? <AlertTriangle size={14} style={{ color: '#f59e0b' }} /> : <AlertTriangle size={14} style={{ color: '#ef4444' }} />}
+                            </span>
+                            <span style={{ width: '120px', fontWeight: 500, color: 'var(--foreground)', flexShrink: 0 }}>{s.name}</span>
+                            <span style={{ flex: 1, color: 'var(--text-muted)', fontSize: '0.73rem' }}>{s.detail}</span>
+                            {s.fixable && s.fixType && (
+                              <button type="button" onClick={() => handleAutoFix(s.fixType)} disabled={!!fixingType}
+                                style={{ fontSize: '0.7rem', padding: '0.2rem 0.5rem', border: '1px solid var(--primary)', borderRadius: '4px', background: 'transparent', color: 'var(--primary)', cursor: 'pointer', whiteSpace: 'nowrap', opacity: fixingType ? 0.5 : 1 }}
+                              >
+                                {fixingType === s.fixType ? <Loader2 size={11} className="spin-icon" /> : <><Zap size={11} /> Fix</>}
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Bullet Quality Stats */}
+                  {reviewResult.bulletStats && reviewResult.bulletStats.total > 0 && (
+                    <div style={{ padding: '0.75rem 1.25rem', borderBottom: reviewResult.bulletIssues?.length > 0 ? '1px solid var(--surface-border)' : 'none' }}>
+                      <p style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>Bullet Quality</p>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.5rem' }}>
+                        {[
+                          { label: 'Total', value: reviewResult.bulletStats.total, color: 'var(--foreground)' },
+                          { label: 'Action Verb', value: `${reviewResult.bulletStats.withActionVerb}/${reviewResult.bulletStats.total}`, color: reviewResult.bulletStats.withActionVerb >= reviewResult.bulletStats.total * 0.8 ? '#10b981' : '#f59e0b' },
+                          { label: 'With Metrics', value: `${reviewResult.bulletStats.withMetrics}/${reviewResult.bulletStats.total}`, color: reviewResult.bulletStats.withMetrics >= reviewResult.bulletStats.total * 0.5 ? '#10b981' : '#ef4444' },
+                          { label: 'Avg Length', value: `${reviewResult.bulletStats.avgLength}ch`, color: reviewResult.bulletStats.avgLength >= 50 && reviewResult.bulletStats.avgLength <= 150 ? '#10b981' : '#f59e0b' },
+                        ].map(s => (
+                          <div key={s.label} style={{ textAlign: 'center' }}>
+                            <p style={{ fontSize: '1rem', fontWeight: 700, color: s.color }}>{s.value}</p>
+                            <p style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>{s.label}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Per-Bullet Issues */}
+                  {reviewResult.bulletIssues && reviewResult.bulletIssues.length > 0 && (
+                    <div style={{ padding: '0.75rem 1.25rem' }}>
+                      <button type="button" onClick={() => setShowBulletDetails(!showBulletDetails)} style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.72rem', fontWeight: 600, color: '#f59e0b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.4rem', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+                        {showBulletDetails ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+                        {reviewResult.bulletIssues.length} Bullet Issue{reviewResult.bulletIssues.length !== 1 ? 's' : ''} Found
+                      </button>
+                      {showBulletDetails && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                          {reviewResult.bulletIssues.map((bi: any, i: number) => (
+                            <div key={i} style={{ padding: '0.5rem 0.6rem', background: 'rgba(245, 158, 11, 0.05)', borderRadius: '6px', border: '1px solid rgba(245, 158, 11, 0.15)' }}>
+                              <p style={{ fontSize: '0.75rem', color: 'var(--foreground)', marginBottom: '0.25rem', fontStyle: 'italic' }}>"{bi.bullet}"</p>
+                              {bi.issues.map((issue: string, j: number) => (
+                                <p key={j} style={{ fontSize: '0.72rem', color: '#f59e0b', paddingLeft: '0.5rem' }}>→ {issue}</p>
+                              ))}
+                            </div>
+                          ))}
+                          <button type="button" onClick={() => handleAutoFix('bullets')} disabled={!!fixingType}
+                            style={{ alignSelf: 'flex-start', fontSize: '0.75rem', padding: '0.35rem 0.7rem', border: '1px solid var(--primary)', borderRadius: '6px', background: 'transparent', color: 'var(--primary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.3rem', marginTop: '0.25rem' }}
+                          >
+                            {fixingType === 'bullets' ? <><Loader2 size={12} className="spin-icon" /> Rewriting...</> : <><Zap size={12} /> Fix All Bullets with AI</>}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* All Good */}
+                  {(!reviewResult.bulletIssues || reviewResult.bulletIssues.length === 0) && reviewResult.sectionChecks?.every((s: any) => s.status === 'pass') && (
+                    <div style={{ padding: '0.75rem 1.25rem' }}>
+                      <p style={{ fontSize: '0.82rem', color: '#10b981', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                        <CheckCircle2 size={14} /> Your resume looks great! Ready to generate.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
             {/* Template Selector */}
             <div className="input-group">
               <label className="input-label">Resume Template</label>
@@ -760,6 +877,8 @@ export default function ResumeForm({ onSubmit, isLoading }: ResumeFormProps) {
             </div>
           </div>
         )}
+
+    
 
         <div className="step-nav" style={{ alignItems: 'center' }}>
           {step > 0 && <button type="button" onClick={prevStep} className="btn-secondary"><ChevronLeft size={16} /> Back</button>}
@@ -783,6 +902,9 @@ export default function ResumeForm({ onSubmit, isLoading }: ResumeFormProps) {
             <div style={{ display: 'flex', gap: '0.75rem' }}>
               <button type="button" onClick={handleGenerateCoverLetter} disabled={coverLetterLoading || !canProceed(1)} className="btn-secondary generate-btn" style={{ borderColor: 'var(--accent)', color: 'var(--accent)' }}>
                 {coverLetterLoading ? <><Loader2 size={16} className="spin-icon" /> Generating...</> : <><Sparkles size={16} /> Cover Letter</>}
+              </button>
+              <button type="button" onClick={handleSaveDraft} disabled={isSavingDraft || !canProceed(1) || !canProceed(2)} className="btn-secondary generate-btn" style={{ color: 'var(--primary)', borderColor: 'var(--primary)' }}>
+                {isSavingDraft ? <><Loader2 size={16} className="spin-icon" /> Saving...</> : <><Check size={16} /> Save Draft</>}
               </button>
               <button type="submit" disabled={isLoading || !canProceed(1) || !canProceed(2)} className="btn-primary generate-btn">
                 {isLoading ? <><Loader2 size={16} className="spin-icon" /> Generating...</> : <><Send size={16} /> Generate Resume</>}

@@ -162,3 +162,124 @@ async function tryCall(opts: {
     console.log(`✓ AI response from ${opts.providerName}/${opts.model}`);
     return { content, model: opts.model };
 }
+
+// ─── Streamed AI Call ────────────────────────────────
+export async function callAIStream(options: {
+    messages: { role: string; content: string }[];
+    temperature?: number;
+    max_tokens?: number;
+}): Promise<ReadableStream> {
+    const errors: string[] = [];
+
+    for (const provider of PROVIDERS) {
+        const apiKey = process.env[provider.keyEnv];
+        if (!apiKey) continue;
+
+        const keys = provider.name === 'OpenRouter'
+            ? apiKey.split(',').map(k => k.trim()).filter(Boolean)
+            : [apiKey];
+
+        for (const key of keys) {
+            for (const model of provider.models) {
+                try {
+                    const stream = await tryCallStream({
+                        url: provider.url,
+                        apiKey: key,
+                        model,
+                        providerName: provider.name,
+                        ...options,
+                    });
+                    if (stream) return stream;
+                } catch (err: any) {
+                    errors.push(`${provider.name}/${model}: ${err.message?.substring(0, 60)}`);
+                }
+            }
+        }
+    }
+
+    console.error('All AI providers exhausted for streaming:', errors.join(' | '));
+    throw new Error('All AI models are currently unavailable for streaming. Please try again.');
+}
+
+async function tryCallStream(opts: {
+    url: string;
+    apiKey: string;
+    model: string;
+    providerName: string;
+    messages: { role: string; content: string }[];
+    temperature?: number;
+    max_tokens?: number;
+}): Promise<ReadableStream | null> {
+    const isGoogle = opts.providerName === 'Google';
+    const url = isGoogle ? `${opts.url}?key=${opts.apiKey}` : opts.url;
+
+    const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+            ...(isGoogle ? {} : { 'Authorization': `Bearer ${opts.apiKey}` }),
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            model: opts.model,
+            temperature: opts.temperature ?? 0.4,
+            max_tokens: opts.max_tokens ?? 1500,
+            messages: opts.messages,
+            stream: true,
+        }),
+    });
+
+    if ([400, 403, 404, 429, 500, 503].includes(response.status)) {
+        return null; // Skip to next
+    }
+
+    if (!response.ok || !response.body) {
+        return null;
+    }
+
+    console.log(`✓ AI Streaming started from ${opts.providerName}/${opts.model}`);
+    return parseOpenAIStream(response.body);
+}
+
+function parseOpenAIStream(body: ReadableStream<Uint8Array>): ReadableStream {
+    const encoder = new TextEncoder();
+    const decoder = new TextDecoder();
+
+    return new ReadableStream({
+        async start(controller) {
+            const reader = body.getReader();
+            let processBuffer = '';
+
+            try {
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    processBuffer += decoder.decode(value, { stream: true });
+                    const lines = processBuffer.split('\n');
+                    processBuffer = lines.pop() || '';
+
+                    for (const line of lines) {
+                        const trimmed = line.trim();
+                        if (!trimmed.startsWith('data: ')) continue;
+                        if (trimmed === 'data: [DONE]') continue;
+
+                        try {
+                            const data = JSON.parse(trimmed.slice(6));
+                            const text = data.choices?.[0]?.delta?.content;
+                            if (text) {
+                                controller.enqueue(encoder.encode(text));
+                            }
+                        } catch (e) {
+                            // ignore parse errors
+                        }
+                    }
+                }
+            } catch (e) {
+                controller.error(e);
+            } finally {
+                controller.close();
+            }
+        }
+    });
+}
+

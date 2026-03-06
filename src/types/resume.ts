@@ -10,6 +10,7 @@ export interface PersonalInfo {
     linkedin: string;
     github: string;
     portfolio: string;
+    profileImage?: string; // Base64 encoded image string
 }
 
 export interface WorkEntry {
@@ -90,6 +91,7 @@ export const emptyResumeData: ResumeData = {
         linkedin: '',
         github: '',
         portfolio: '',
+        profileImage: '',
     },
     summary: '',
     targetRole: '',

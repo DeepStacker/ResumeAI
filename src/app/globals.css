@@ -1297,6 +1297,58 @@ textarea.input-field {
   margin-bottom: 0.4rem;
 }
 
+.modern-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.modern-header-text {
+  flex: 1;
+}
+
+.modern-profile-image {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--primary);
+}
+
+/* Template Overrides */
+.resume-template-modern .resume-h1 {
+  font-size: 1.8rem;
+  color: var(--primary);
+  border-bottom: 2px solid var(--primary);
+  padding-bottom: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.resume-template-modern .resume-h2 {
+  border-bottom: none;
+  background: var(--primary-light);
+  padding: 0.35rem 0.6rem;
+  border-radius: 4px;
+  color: var(--primary);
+}
+
+.resume-template-minimal .resume-h2 {
+  color: var(--foreground);
+  border-top: 1px solid var(--surface-border);
+  border-bottom: 1px solid var(--surface-border);
+  text-transform: uppercase;
+  letter-spacing: normal;
+  padding: 0.2rem 0;
+  text-align: center;
+}
+
+.resume-template-minimal .resume-h3 {
+  color: var(--foreground);
+  border-bottom: none;
+}
+
 .resume-ul {
   list-style: none;
   padding-left: 0;
@@ -1336,10 +1388,28 @@ textarea.input-field {
 
 /* ===== Print ===== */
 @media print {
-  body {
-    background: white !important;
+  @page {
+    size: Letter;
+    margin: 0.5in;
   }
 
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  html,
+  body {
+    background: white !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
+    font-size: 11pt !important;
+  }
+
+  /* Hide everything except the resume */
   .glass-panel,
   .form-panel,
   .preview-toolbar,
@@ -1348,9 +1418,15 @@ textarea.input-field {
   .ats-badge,
   header,
   footer,
+  nav,
+  .chatbot-container,
+  .chatbot-toggle,
   .step-nav,
   .stepper,
-  .progress-bar-container {
+  .progress-bar-container,
+  .sidebar,
+  .toolbar-btn,
+  .builder-nav {
     display: none !important;
   }
 
@@ -1359,27 +1435,100 @@ textarea.input-field {
     box-shadow: none !important;
     background: white !important;
     border-radius: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    position: static !important;
   }
 
   .preview-content-area {
     max-height: none !important;
     overflow: visible !important;
+    height: auto !important;
+    padding: 0 !important;
+  }
+
+  #resume-print-area {
+    width: 100% !important;
+    max-width: none !important;
   }
 
   .resume-paper {
     padding: 0 !important;
+    margin: 0 !important;
     background: white !important;
     color: #000 !important;
+    width: 100% !important;
+    min-height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    box-shadow: none !important;
+    border: none !important;
+    border-radius: 0 !important;
   }
 
-  .resume-h2,
-  .resume-h3 {
-    color: #222 !important;
-    border-color: #222 !important;
+  /* Force proper text colors for print */
+  .resume-paper * {
+    color: #000 !important;
+    border-color: #333 !important;
   }
 
-  .resume-li::before {
-    color: #222 !important;
+  .resume-paper a {
+    color: #1a1a1a !important;
+    text-decoration: none !important;
+  }
+
+  .resume-paper h1 {
+    font-size: 18pt !important;
+    margin-bottom: 4pt !important;
+  }
+
+  .resume-paper h2 {
+    font-size: 11pt !important;
+    margin-top: 8pt !important;
+    margin-bottom: 4pt !important;
+    page-break-after: avoid !important;
+  }
+
+  .resume-paper h3 {
+    font-size: 10.5pt !important;
+    page-break-after: avoid !important;
+  }
+
+  .resume-paper p,
+  .resume-paper li,
+  .resume-paper span,
+  .resume-paper div {
+    font-size: 10pt !important;
+    line-height: 1.35 !important;
+  }
+
+  .resume-paper section {
+    page-break-inside: avoid !important;
+    margin-bottom: 6pt !important;
+  }
+
+  /* Prevent breaks inside entries */
+  .resume-paper section>div>div {
+    page-break-inside: avoid !important;
+  }
+
+  .resume-paper ul {
+    margin-top: 2pt !important;
+    margin-bottom: 2pt !important;
+    padding-left: 14pt !important;
+  }
+
+  .resume-paper li {
+    margin-bottom: 1pt !important;
+  }
+
+  /* Reset any dark mode overrides for print */
+  .template-professional,
+  .template-modern,
+  .template-minimal {
+    background: white !important;
+    color: #000 !important;
   }
 }
 
@@ -3225,6 +3374,76 @@ textarea.input-field {
   border-top-right-radius: 4px;
 }
 
+/* Rich markdown inside chat bubbles */
+.chat-markdown p {
+  margin: 0 0 0.4rem 0;
+}
+
+.chat-markdown p:last-child {
+  margin-bottom: 0;
+}
+
+.chat-markdown strong {
+  font-weight: 700;
+  color: inherit;
+}
+
+.chat-markdown h3,
+.chat-markdown h4 {
+  font-size: 0.9rem;
+  font-weight: 700;
+  margin: 0.6rem 0 0.2rem 0;
+  color: var(--primary);
+}
+
+.chat-markdown h3:first-child,
+.chat-markdown h4:first-child {
+  margin-top: 0;
+}
+
+.chat-markdown ul,
+.chat-markdown ol {
+  margin: 0.25rem 0 0.5rem 0;
+  padding-left: 1.2rem;
+}
+
+.chat-markdown li {
+  margin-bottom: 0.15rem;
+  line-height: 1.45;
+}
+
+.chat-markdown li::marker {
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.chat-markdown code {
+  background: rgba(139, 92, 246, 0.1);
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+  font-size: 0.82rem;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+}
+
+.chat-markdown hr {
+  border: none;
+  border-top: 1px solid var(--surface-border);
+  margin: 0.5rem 0;
+}
+
+.chat-message.user .chat-markdown h3,
+.chat-message.user .chat-markdown h4 {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.chat-message.user .chat-markdown li::marker {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.chat-message.user .chat-markdown code {
+  background: rgba(255, 255, 255, 0.15);
+}
+
 /* Typing indicator */
 .chat-typing {
   display: flex;
@@ -3272,6 +3491,63 @@ textarea.input-field {
 .chatbot-generate-btn {
   width: 100%;
   justify-content: center;
+}
+
+.chatbot-generate-btn.btn-warning {
+  background: var(--text-muted);
+  opacity: 0.9;
+}
+
+.chatbot-readiness {
+  margin-bottom: 0.5rem;
+}
+
+.chatbot-readiness-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  margin-bottom: 0.3rem;
+  color: var(--text-muted);
+}
+
+.chatbot-readiness-score {
+  font-weight: 700;
+}
+
+.chatbot-readiness-score.ready {
+  color: #22c55e;
+}
+
+.chatbot-readiness-score.not-ready {
+  color: #f59e0b;
+}
+
+.chatbot-readiness-bar {
+  height: 5px;
+  border-radius: 3px;
+  background: var(--surface-border);
+  overflow: hidden;
+}
+
+.chatbot-readiness-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.4s ease;
+}
+
+.chatbot-readiness-fill.ready {
+  background: linear-gradient(90deg, #22c55e, #16a34a);
+}
+
+.chatbot-readiness-fill.not-ready {
+  background: linear-gradient(90deg, #f59e0b, #d97706);
+}
+
+.chatbot-readiness-missing {
+  font-size: 0.7rem;
+  color: #f59e0b;
+  margin-top: 0.3rem;
+  line-height: 1.3;
 }
 
 /* Quick Reply Suggestions */
@@ -3365,6 +3641,117 @@ textarea.input-field {
 }
 
 .chatbot-send-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Voice buttons */
+.chatbot-voice-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid var(--surface-border);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.chatbot-voice-btn:hover {
+  color: var(--primary);
+  border-color: var(--primary);
+  background: var(--primary-light);
+}
+
+.chatbot-voice-btn.recording {
+  color: white;
+  background: var(--error);
+  border-color: var(--error);
+  animation: pulse-record 1.2s ease-in-out infinite;
+}
+
+.chatbot-voice-btn.active {
+  color: white;
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+@keyframes pulse-record {
+
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+  }
+
+  50% {
+    box-shadow: 0 0 0 8px rgba(239, 68, 68, 0);
+  }
+}
+
+.chatbot-input.voice-active {
+  border-color: var(--error) !important;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.15);
+}
+
+/* Per-message speak button */
+.chat-speak-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  opacity: 0;
+  transition: all 0.15s;
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+}
+
+.chat-bubble:hover .chat-speak-btn {
+  opacity: 0.6;
+}
+
+.chat-speak-btn:hover {
+  opacity: 1 !important;
+  color: var(--primary);
+  background: var(--primary-light);
+}
+
+.chat-bubble {
+  position: relative;
+}
+
+.chatbot-attach-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid var(--surface-border);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.chatbot-attach-btn:hover:not(:disabled) {
+  color: var(--primary);
+  border-color: var(--primary);
+  background: rgba(79, 70, 229, 0.06);
+}
+
+.chatbot-attach-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }

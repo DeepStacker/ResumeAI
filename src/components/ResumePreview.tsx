@@ -1,8 +1,13 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
+import { Download, RefreshCw, FileText, Printer, Check, Loader2, Target, ChevronDown, ChevronUp } from 'lucide-react';
+import { useResumeStore } from '@/store/useResumeStore';
+import { ProfessionalTemplate } from './templates/ProfessionalTemplate';
+import { ModernTemplate } from './templates/ModernTemplate';
+import { MinimalTemplate } from './templates/MinimalTemplate';
 import ReactMarkdown from 'react-markdown';
-import { Download, RefreshCw, FileText, Eye, Edit3, Copy, Printer, Check, Loader2, Target, ChevronDown, ChevronUp } from 'lucide-react';
+import remarkGfm from 'remark-gfm';
 
 interface AtsResult {
   score: number;
@@ -12,15 +17,16 @@ interface AtsResult {
 }
 
 interface ResumePreviewProps {
-  resumeMarkdown: string | null;
+  resumeMarkdown: string | null;  // Kept for prop compatibility/trigger, but we use store.data for actual render
+  resumeData?: any;
   onResumeChange: (markdown: string) => void;
   onReset: () => void;
   jobDescription?: string;
 }
 
-export default function ResumePreview({ resumeMarkdown, onResumeChange, onReset, jobDescription }: ResumePreviewProps) {
-  const [mode, setMode] = useState<'preview' | 'edit'>('preview');
-  const [copied, setCopied] = useState(false);
+export default function ResumePreview({ resumeMarkdown, resumeData, onReset, jobDescription }: ResumePreviewProps) {
+  const store = useResumeStore();
+  const activeData = resumeData || store.data;
   const [atsResult, setAtsResult] = useState<AtsResult | null>(null);
   const [atsLoading, setAtsLoading] = useState(false);
   const [atsExpanded, setAtsExpanded] = useState(false);
@@ -41,32 +47,12 @@ export default function ResumePreview({ resumeMarkdown, onResumeChange, onReset,
       const res = await fetch('/api/ats-score', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ resume: resumeMarkdown, jobDescription }),
+        body: JSON.stringify({ resume: JSON.stringify(activeData), jobDescription }),
       });
       const data = await res.json();
       if (data.score !== undefined) setAtsResult(data);
     } catch { /* silent */ }
     setAtsLoading(false);
-  };
-
-  const handleDownload = () => {
-    if (!resumeMarkdown) return;
-    const blob = new Blob([resumeMarkdown], { type: 'text/markdown' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `resume_${new Date().toISOString().split('T')[0]}.md`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
-
-  const handleCopy = async () => {
-    if (!resumeMarkdown) return;
-    await navigator.clipboard.writeText(resumeMarkdown);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
   };
 
   const getScoreColor = (score: number) => {
@@ -75,47 +61,65 @@ export default function ResumePreview({ resumeMarkdown, onResumeChange, onReset,
     return 'var(--error)';
   };
 
-  if (!resumeMarkdown) {
+  const hasData = resumeMarkdown || (activeData && activeData.personal?.fullName);
+  if (!hasData) {
     return (
       <div className="preview-empty">
         <div className="preview-empty-icon"><FileText size={48} strokeWidth={1.5} /></div>
         <h3>Your Resume Awaits</h3>
-        <p>Fill out the form and generate. Our AI crafts an ATS-optimized resume tailored to your target role.</p>
+        <p>Fill out the form and generate. Our AI crafts an ATS-optimized layout tailored to your target role.</p>
         <div className="preview-empty-features">
-          <div className="preview-feature-item"><Edit3 size={14} /><span>Editable</span></div>
-          <div className="preview-feature-item"><Printer size={14} /><span>Print-ready</span></div>
           <div className="preview-feature-item"><Target size={14} /><span>ATS Score</span></div>
-          <div className="preview-feature-item"><Download size={14} /><span>Export</span></div>
+          <div className="preview-feature-item"><Printer size={14} /><span>Print-ready PDF</span></div>
         </div>
       </div>
     );
   }
+
+  const renderTemplate = () => {
+    // Backwards compatibility for old markdown resumes
+    if (resumeMarkdown && resumeMarkdown !== '# Generated' && resumeMarkdown !== 'Loaded') {
+      return (
+        <div className="resume-paper" style={{ padding: '2.5rem', background: 'white', color: 'black' }}>
+          <div className="resume-content">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              {resumeMarkdown}
+            </ReactMarkdown>
+          </div>
+        </div>
+      );
+    }
+    
+    switch (activeData?.template || 'professional') {
+      case 'modern': return <ModernTemplate data={activeData} />;
+      case 'minimal': return <MinimalTemplate data={activeData} />;
+      case 'professional':
+      default: return <ProfessionalTemplate data={activeData} />;
+    }
+  };
 
   return (
     <div className="preview-container animate-fade-in">
       {/* Toolbar */}
       <div className="preview-toolbar">
         <div className="preview-toolbar-left">
-          <div className="preview-mode-toggle">
-            <button className={`mode-btn ${mode === 'preview' ? 'active' : ''}`} onClick={() => setMode('preview')} type="button"><Eye size={14} /> Preview</button>
-            <button className={`mode-btn ${mode === 'edit' ? 'active' : ''}`} onClick={() => setMode('edit')} type="button"><Edit3 size={14} /> Edit</button>
+          <div className="preview-mode-toggle" style={{ fontWeight: 600, color: 'var(--foreground)' }}>
+             Live Preview
           </div>
           {/* ATS Score Badge */}
           {atsLoading && <div className="ats-badge loading"><Loader2 size={13} className="spin-icon" /> Scoring...</div>}
           {atsResult && !atsLoading && (
             <button className="ats-badge" onClick={() => setAtsExpanded(!atsExpanded)} type="button" style={{ borderColor: getScoreColor(atsResult.score) }}>
-              <Target size={13} />
-              <span style={{ color: getScoreColor(atsResult.score), fontWeight: 700 }}>{atsResult.score}</span>
-              <span>ATS</span>
-              {atsExpanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+               <Target size={13} />
+               <span style={{ color: getScoreColor(atsResult.score), fontWeight: 700 }}>{atsResult.score}</span>
+               <span>ATS</span>
+               {atsExpanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
             </button>
           )}
         </div>
         <div className="preview-toolbar-right">
-          <button onClick={onReset} className="toolbar-btn" title="Reset" type="button"><RefreshCw size={14} /></button>
-          <button onClick={handleCopy} className="toolbar-btn" title="Copy" type="button">{copied ? <Check size={14} color="var(--success)" /> : <Copy size={14} />}</button>
-          <button onClick={handleDownload} className="toolbar-btn" title="Download .md" type="button"><Download size={14} /></button>
-          <button onClick={() => window.print()} className="toolbar-btn accent" title="Print / PDF" type="button"><Printer size={14} /></button>
+          <button onClick={onReset} className="toolbar-btn" title="Reset" type="button"><RefreshCw size={14} /> Reset</button>
+          <button onClick={() => window.print()} className="toolbar-btn accent" title="Print / PDF" type="button"><Printer size={14} /> Print PDF</button>
         </div>
       </div>
 
@@ -154,31 +158,9 @@ export default function ResumePreview({ resumeMarkdown, onResumeChange, onReset,
 
       {/* Content */}
       <div className="preview-content-area">
-        {mode === 'edit' ? (
-          <div className="editor-wrapper animate-fade-in">
-            <textarea className="resume-editor" value={resumeMarkdown} onChange={e => onResumeChange(e.target.value)} spellCheck={false} />
-          </div>
-        ) : (
-          <div className="resume-paper" ref={printRef} id="resume-print-area">
-            <div className="resume-content">
-              <ReactMarkdown
-                components={{
-                  h1: ({ children, ...props }) => <h1 className="resume-h1" {...props}>{children}</h1>,
-                  h2: ({ children, ...props }) => <h2 className="resume-h2" {...props}>{children}</h2>,
-                  h3: ({ children, ...props }) => <h3 className="resume-h3" {...props}>{children}</h3>,
-                  p: ({ children, ...props }) => <p className="resume-p" {...props}>{children}</p>,
-                  ul: ({ children, ...props }) => <ul className="resume-ul" {...props}>{children}</ul>,
-                  li: ({ children, ...props }) => <li className="resume-li" {...props}>{children}</li>,
-                  strong: ({ children, ...props }) => <strong className="resume-strong" {...props}>{children}</strong>,
-                  hr: (props) => <hr className="resume-hr" {...props} />,
-                  a: ({ children, ...props }) => <a className="resume-link" {...props} target="_blank" rel="noopener">{children}</a>,
-                }}
-              >
-                {resumeMarkdown}
-              </ReactMarkdown>
-            </div>
-          </div>
-        )}
+        <div ref={printRef} id="resume-print-area">
+           {renderTemplate()}
+        </div>
       </div>
     </div>
   );

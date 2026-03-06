@@ -31,9 +31,13 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
 
   // Resume viewing modal state
-  const [viewingResume, setViewingResume] = useState<string | null>(null);
+  const [viewingResume, setViewingResume] = useState<any | null>(null);
   const [modalLoading, setModalLoading] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  // Delete modal state
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   // Cover letter modal state
   const [clResumeId, setClResumeId] = useState<string | null>(null);
@@ -75,23 +79,49 @@ export default function DashboardPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Delete this resume? This cannot be undone.')) return;
-    const res = await fetch(`/api/resumes?id=${id}`, { method: 'DELETE' });
-    if (res.ok) {
-      setResumes(prev => prev.filter(r => r.id !== id));
+  const handleDelete = (id: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDeleteConfirmId(id);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteConfirmId) return;
+    setDeleteLoading(true);
+    try {
+      const res = await fetch(`/api/resumes?id=${deleteConfirmId}`, { method: 'DELETE' });
+      if (res.ok) {
+        setResumes(prev => prev.filter(r => r.id !== deleteConfirmId));
+        setDeleteConfirmId(null);
+      } else {
+        alert('Failed to delete resume.');
+      }
+    } catch (err) {
+      console.error('Error deleting resume:', err);
+      alert('Error deleting resume.');
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
   const handleViewResume = async (id: string, e: React.MouseEvent) => {
-    e.stopPropagation(); // prevent triggering other clicks
+    e.stopPropagation();
     setModalLoading(true);
     try {
       const res = await fetch(`/api/resumes?id=${id}`);
       if (res.ok) {
-        const data = await res.json();
-        if (data.resume?.markdown) {
-          setViewingResume(data.resume.markdown);
+        const responseData = await res.json();
+        const resume = responseData.resume;
+        
+        if (resume?.data && typeof resume.data === 'object' && resume.data.personal) {
+          // New JSON format — pass structured data for template rendering
+          setViewingResume({ type: 'json', data: resume.data, markdown: resume.markdown });
+        } else if (resume?.markdown && resume.markdown !== '# Generated') {
+          // Old markdown format
+          setViewingResume({ type: 'markdown', markdown: resume.markdown });
+        } else if (resume?.data) {
+          // JSON data but might be a different shape
+          setViewingResume({ type: 'json', data: resume.data, markdown: resume.markdown });
         } else {
           alert('This resume is empty or was saved incorrectly.');
         }
@@ -166,7 +196,7 @@ export default function DashboardPage() {
           <p className="dashboard-card-sub">total resumes</p>
         </div>
 
-        <div className="dashboard-card glass-panel action-card" onClick={() => router.push('/')} style={{ cursor: 'pointer' }}>
+        <div className="dashboard-card glass-panel action-card" onClick={() => router.push('/builder')} style={{ cursor: 'pointer' }}>
           <div className="dashboard-card-header">
             <Plus size={18} />
             <h3>New Resume</h3>
@@ -185,7 +215,7 @@ export default function DashboardPage() {
           <div className="dashboard-empty glass-panel">
             <FileText size={32} style={{ opacity: 0.3 }} />
             <p>No resumes yet. Create your first one!</p>
-            <Link href="/" className="btn-primary">Create Resume <ArrowRight size={16} /></Link>
+            <Link href="/builder" className="btn-primary">Create Resume <ArrowRight size={16} /></Link>
           </div>
         ) : (
           <div className="resume-list">
@@ -212,7 +242,7 @@ export default function DashboardPage() {
                   <button className="share-badge" style={{ background: 'rgba(139, 92, 246, 0.1)', color: 'var(--accent)' }} onClick={(e) => { e.stopPropagation(); setClResumeId(resume.id); setClJd(''); }} title="Generate cover letter">
                     <Sparkles size={12} /> Cover Letter
                   </button>
-                  <button className="btn-icon" onClick={(e) => { e.stopPropagation(); handleDelete(resume.id); }} title="Delete" style={{ color: 'var(--error)', background: 'rgba(239, 68, 68, 0.1)', padding: '0.5rem', borderRadius: 'var(--radius-sm)' }}>
+                  <button className="btn-icon" onClick={(e) => handleDelete(resume.id, e)} title="Delete" style={{ color: 'var(--error)', background: 'rgba(239, 68, 68, 0.1)', padding: '0.5rem', borderRadius: 'var(--radius-sm)' }}>
                     <Trash2 size={16} />
                   </button>
                 </div>
@@ -253,8 +283,9 @@ export default function DashboardPage() {
             </button>
             <div className="resume-modal-scroll-area">
               <ResumePreview 
-                resumeMarkdown={viewingResume} 
-                onResumeChange={setViewingResume}
+                resumeMarkdown={viewingResume.type === 'markdown' ? viewingResume.markdown : "Loaded"} 
+                resumeData={viewingResume.type === 'json' ? viewingResume.data : undefined}
+                onResumeChange={() => {}}
                 onReset={() => setViewingResume(null)}
                 jobDescription={""}
               />
@@ -320,6 +351,40 @@ export default function DashboardPage() {
             </button>
           </div>
         </div>
-      )}    </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirmId && (
+        <div className="resume-modal-overlay">
+          <div className="resume-modal-content" style={{ maxWidth: '400px', padding: '2rem', textAlign: 'center' }}>
+            <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'rgba(239, 68, 68, 0.1)', color: 'var(--error)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem' }}>
+              <Trash2 size={24} />
+            </div>
+            <h3 style={{ marginBottom: '0.5rem' }}>Delete Resume</h3>
+            <p style={{ color: 'var(--text-muted)', marginBottom: '1.5rem', fontSize: '0.95rem' }}>
+              Are you sure you want to delete this resume? This action cannot be undone.
+            </p>
+            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+              <button 
+                className="btn-secondary" 
+                onClick={() => setDeleteConfirmId(null)}
+                disabled={deleteLoading}
+                style={{ flex: 1, justifyContent: 'center' }}
+              >
+                Cancel
+              </button>
+              <button 
+                className="btn-primary" 
+                onClick={confirmDelete}
+                disabled={deleteLoading}
+                style={{ flex: 1, justifyContent: 'center', background: 'var(--error)', borderColor: 'var(--error)', color: 'white' }}
+              >
+                {deleteLoading ? <Loader2 size={16} className="spin-icon" /> : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

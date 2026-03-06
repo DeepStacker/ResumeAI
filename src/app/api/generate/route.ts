@@ -1,4 +1,4 @@
-import { callAI } from '@/lib/ai';
+import { callAI, callAIStream } from '@/lib/ai';
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
@@ -71,98 +71,166 @@ export async function POST(req: Request) {
             ? languages.join(', ')
             : '';
 
-        // Template-specific instructions
-        const templateInstructions: Record<string, string> = {
-            professional: `Use a clean, traditional corporate format. Sections: PROFESSIONAL SUMMARY, CORE COMPETENCIES, PROFESSIONAL EXPERIENCE, TECHNICAL PROJECTS (if any), EDUCATION, CERTIFICATIONS (if any). Use formal language.`,
-            modern: `Use a modern format with clear section divisions. Be concise and impactful. Use short paragraphs and bullet points. Include a PROFILE section at the top. Group skills into categories.`,
-            minimal: `Use an extremely clean, minimal format optimized for ATS parsing. No fancy formatting. Use simple markdown. Sections: SUMMARY, SKILLS, EXPERIENCE, PROJECTS (if any), EDUCATION. Focus on content over style.`,
-        };
-
         // JD keyword extraction instruction
         const jdInstruction = jobDescription
-            ? `\n\nIMPORTANT — The candidate is applying for this specific position. Here is the job description:\n---\n${jobDescription.substring(0, 2000)}\n---\nExtract relevant keywords, required skills, and qualifications from this JD. Weave them naturally throughout the resume — especially in the summary, skills, and experience bullets. This is critical for ATS keyword matching.`
+            ? `\n\nTARGET JOB DESCRIPTION (for keyword alignment only):
+---
+${jobDescription.substring(0, 2500)}
+---
+Use the JD to guide keyword ORDERING and PHRASING. But NEVER add skills or tools the candidate didn't provide.`
             : '';
 
-        const prompt = `You are a world-class executive resume writer and ATS optimization expert.
+        const prompt = `You are a professional resume editor. Your ONLY job is to improve the PHRASING and STRUCTURE of the candidate's existing resume data. You are NOT creating new content.
 
-Generate a FULL, detailed professional resume in Markdown format.
+${jdInstruction}
 
-${templateInstructions[template] || templateInstructions.professional}
+=== ⛔ ABSOLUTE TRUTHFULNESS RULES (HIGHEST PRIORITY — VIOLATING THESE IS UNACCEPTABLE) ===
 
-Candidate Information:
-Name: ${personal.fullName}
-Contact: ${contactLine}
-Links: ${linksLine || 'N/A'}
+1. NEVER invent, fabricate, or hallucinate ANY:
+   - Skills or technologies the candidate did not list
+   - Tools, frameworks, or platforms not mentioned in their data
+   - Metrics, numbers, percentages, or dollar amounts they did not provide
+   - Job responsibilities or achievements they did not describe
+   - Company names, titles, or dates they did not provide
+   - Certifications or qualifications they did not mention
+
+2. You may ONLY:
+   - Reword existing bullets for better impact (stronger verbs, clearer structure)
+   - Rearrange information for better flow
+   - Fix grammar and spelling
+   - Ensure bullets start with action verbs
+   - Write a summary that ONLY references skills/experience the candidate actually has
+   - Reorder the skills list to prioritize JD-relevant ones FIRST
+
+3. If the candidate provided a metric (e.g., "500K+ records"), keep that EXACT metric
+4. If the candidate did NOT provide a metric, do NOT invent one — just improve the phrasing
+5. The candidate's tech stack for each project/experience is SACRED — use their exact tools
+
+=== RESUME IMPROVEMENT RULES ===
+
+📝 PROFESSIONAL SUMMARY:
+- Write 2-3 sentences based ONLY on what the candidate provided
+- Sentence 1: "[Their actual title] with experience in [their actual domain based on experience data]"
+- Sentence 2: Their actual technical expertise (list only skills THEY provided)
+- Sentence 3: One real achievement from their experience data (use their actual metric if they gave one)
+- ONLY mention technologies and tools that appear in their skills list or experience bullets
+- Keep it concise and factual
+
+💼 EXPERIENCE BULLETS:
+- Start each bullet with a strong past-tense action verb (Developed, Designed, Implemented, Built, Processed, etc.)
+- PRESERVE the candidate's exact claims — if they said "500K+ records", keep "500K+ records"
+- PRESERVE the candidate's exact tech stack — if they said "BigQuery", don't change to "Snowflake"
+- Only improve SENTENCE STRUCTURE, not the CONTENT
+- Each experience entry: keep the SAME NUMBER of bullets the candidate provided (do not add or remove bullets)
+- If a bullet is vague (e.g., "Worked on data pipeline"), make it specific using ONLY information from that same experience entry
+
+🛠️ SKILLS:
+- Return the candidate's EXACT skills list
+- You may reorder them to put JD-relevant skills first
+- You may normalize formatting (e.g., "python" → "Python", "GCP" → "Google Cloud Platform (GCP)")
+- Do NOT add skills the candidate didn't list
+- Do NOT remove any skills the candidate listed
+
+📁 PROJECTS:
+- Keep the candidate's EXACT tech stack (shown in parentheses)
+- Improve the description sentence structure only
+- Start with an action verb
+- PRESERVE any metrics the candidate included
+- Do NOT add technologies or outcomes they didn't mention
+
+=== CANDIDATE DATA ===
+
 Target Role: ${targetRole}
-
-${summary ? `Candidate's Summary/Objective:\n${summary}` : 'Generate a compelling professional summary based on the data below.'}
-
+Summary: ${summary || 'None provided — write one based ONLY on the experience and skills listed below.'}
 Skills: ${skillsText}
 
 Experience:
 ${experienceText}
 
-${projectsText ? `Projects:\n${projectsText}` : ''}
+Projects:
+${projectsText}
 
-Education:
-${educationText}
+=== OUTPUT FORMAT ===
 
-${certsText ? `Certifications: ${certsText}` : ''}
-${langsText ? `Languages: ${langsText}` : ''}
-${jdInstruction}
+Return ONLY valid JSON. No markdown, no code blocks, no explanations.
+{
+  "summary": "2-3 sentence summary using ONLY facts from the candidate's data",
+  "skills": ["Their exact skills, reordered for relevance"],
+  "experience": [
+    { "id": "experience-id", "bullets": ["Improved version of their EXACT bullet", "..."] }
+  ],
+  "projects": [
+    { "id": "project-id", "description": "Improved version of their EXACT description" }
+  ]
+}
 
-STRICT RULES:
-1. Start with the candidate's name as # heading, contact info below it
-2. Use ### for section headers
-3. Use Google XYZ formula for experience bullets: Accomplished [X] measured by [Y] by doing [Z]
-4. Use strong ATS keywords relevant to: ${targetRole}
-5. Do NOT repeat bullet points
-6. Do NOT invent data that was not provided — only enhance and optimize what's given
-7. Keep resume concise but powerful (aim for 1-2 pages)
-8. Output ONLY Markdown, no explanations
-`;
+Experience IDs: ${experience.map((e: any) => e.id).join(', ')}
+Project IDs: ${projects.map((p: any) => p.id).join(', ')}
 
-        let resume: string;
+REMEMBER: You are an EDITOR, not a WRITER. Improve their words, don't replace them with fiction.
+Return ONLY valid JSON. Nothing else.`;
+
+        let aiResponse: any;
         try {
-            const aiResult = await callAI({
+            aiResponse = await callAI({
                 messages: [{ role: 'user', content: prompt }],
                 temperature: 0.3,
-                max_tokens: 2500,
+                max_tokens: 3000,
             });
-            resume = aiResult.content;
         } catch (aiErr: any) {
             console.error('AI call failed:', aiErr.message);
             return NextResponse.json({ error: aiErr.message || 'All AI models are currently unavailable. Please try again later.' }, { status: 503 });
         }
 
-        if (!resume) {
-            return NextResponse.json({ error: 'AI returned an empty response. Credits were NOT charged. Please try again.' }, { status: 500 });
+        let content = aiResponse.content;
+        content = content.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '');
+
+        let tailoredData: any;
+        try {
+            tailoredData = JSON.parse(content);
+        } catch (e) {
+            console.error('Failed to parse tailored resume JSON:', content.substring(0, 500));
+            return NextResponse.json({ error: 'AI generated invalid data. Please try again.' }, { status: 500 });
         }
 
-        // SUCCESS — NOW deduct credits (wrapped in try-catch so a DB hiccup doesn't kill the response)
+        // Apply tailored data to the original form body
+        const finalResumeData = { ...body };
+        if (tailoredData.summary) finalResumeData.summary = tailoredData.summary;
+        if (Array.isArray(tailoredData.skills)) finalResumeData.skills = tailoredData.skills;
+
+        if (Array.isArray(tailoredData.experience)) {
+            finalResumeData.experience = finalResumeData.experience.map((exp: any) => {
+                const match = tailoredData.experience.find((te: any) => te.id === exp.id);
+                return match ? { ...exp, bullets: match.bullets } : exp;
+            });
+        }
+
+        if (Array.isArray(tailoredData.projects)) {
+            finalResumeData.projects = finalResumeData.projects.map((proj: any) => {
+                const match = tailoredData.projects.find((tp: any) => tp.id === proj.id);
+                return match ? { ...proj, description: match.description } : proj;
+            });
+        }
+
+        let dbRes;
         try {
             await deductCredits(userId, 'GENERATE_RESUME', 'Generated ATS resume');
-        } catch (creditErr) {
-            console.error('Credit deduction failed after successful generation:', creditErr);
-            // Still return the resume — the user should not lose their output
-        }
 
-        // ====== SAVE TO DATABASE ======
-        try {
-            await prisma.resume.create({
+            dbRes = await prisma.resume.create({
                 data: {
                     userId,
                     title: `${targetRole} Resume`,
-                    data: body,           // Store the full JSON payload
-                    markdown: resume,     // Store the generated markdown result
+                    data: finalResumeData,
                 }
             });
-            console.log(`Saved new resume for user ${userId}`);
         } catch (dbErr) {
-            console.error('Failed to save generated resume to database:', dbErr);
+            console.error('Failed to save tailored resume or deduct credits:', dbErr);
         }
 
-        return NextResponse.json({ resume });
+        return NextResponse.json({
+            data: finalResumeData,
+            resumeId: dbRes?.id || null
+        });
     } catch (error) {
         console.error('Generate API error:', error);
         return NextResponse.json({ error: 'An unexpected error occurred' }, { status: 500 });

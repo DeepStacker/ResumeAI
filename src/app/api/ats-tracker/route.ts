@@ -37,6 +37,82 @@ export async function GET() {
     }
 }
 
+import { runATSAnalysis } from '@/lib/ats-engine';
+
+// Convert structured resume JSON into readable text for accurate ATS analysis
+function resumeDataToText(data: any): string {
+    const lines: string[] = [];
+
+    // Contact Info
+    if (data.personal) {
+        const p = data.personal;
+        if (p.fullName) lines.push(p.fullName);
+        const contactParts = [p.location, p.phone, p.email, p.linkedin, p.github, p.portfolio].filter(Boolean);
+        if (contactParts.length > 0) lines.push(contactParts.join(' | '));
+    }
+
+    // Professional Summary
+    if (data.summary) {
+        lines.push('', 'Professional Summary', data.summary);
+    }
+
+    // Skills
+    if (Array.isArray(data.skills) && data.skills.length > 0) {
+        lines.push('', 'Skills', data.skills.join(', '));
+    }
+
+    // Experience
+    if (Array.isArray(data.experience) && data.experience.length > 0) {
+        lines.push('', 'Professional Experience');
+        for (const exp of data.experience) {
+            lines.push(`${exp.jobTitle || 'Role'} at ${exp.company || 'Company'}`);
+            if (exp.startDate || exp.endDate) lines.push(`${exp.startDate || ''} - ${exp.endDate || 'Present'}`);
+            if (exp.location) lines.push(exp.location);
+            if (Array.isArray(exp.bullets)) {
+                for (const b of exp.bullets) {
+                    if (b && b.trim()) lines.push(`- ${b.trim()}`);
+                }
+            }
+        }
+    }
+
+    // Projects
+    if (Array.isArray(data.projects) && data.projects.length > 0) {
+        lines.push('', 'Projects');
+        for (const proj of data.projects) {
+            lines.push(`${proj.name || 'Project'}${proj.techStack ? ' (' + proj.techStack + ')' : ''}`);
+            if (proj.description) lines.push(proj.description);
+            if (proj.link) lines.push(proj.link);
+        }
+    }
+
+    // Education
+    if (Array.isArray(data.education) && data.education.length > 0) {
+        lines.push('', 'Education');
+        for (const edu of data.education) {
+            lines.push(`${edu.degree || 'Degree'}, ${edu.institution || 'Institution'}, ${edu.year || ''}`);
+            if (edu.gpa) lines.push(`GPA: ${edu.gpa}`);
+        }
+    }
+
+    // Certifications
+    if (Array.isArray(data.certifications) && data.certifications.length > 0) {
+        lines.push('', 'Certifications', data.certifications.join(', '));
+    }
+
+    // Languages
+    if (Array.isArray(data.languages) && data.languages.length > 0) {
+        lines.push('', 'Languages', data.languages.join(', '));
+    }
+
+    // Target role (helps with keyword matching context)
+    if (data.targetRole) {
+        lines.push('', `Target Role: ${data.targetRole}`);
+    }
+
+    return lines.join('\n');
+}
+
 // POST: run ATS analysis on a resume + JD, save score
 export async function POST(req: Request) {
     try {
@@ -46,20 +122,40 @@ export async function POST(req: Request) {
         }
         const userId = (session.user as any).id;
 
-        const { resumeId, jobDescription } = await req.json();
+        const { resumeId, resumeText, jobDescription } = await req.json();
 
-        if (!resumeId || !jobDescription) {
-            return NextResponse.json({ error: 'Resume ID and job description are required' }, { status: 400 });
+        if (!jobDescription) {
+            return NextResponse.json({ error: 'Job description is required' }, { status: 400 });
         }
 
-        // Fetch the resume
-        const resume = await prisma.resume.findFirst({
-            where: { id: resumeId, userId },
-            select: { markdown: true, title: true },
-        });
+        let resumeContent = '';
+        let resumeTitle = 'Uploaded Resume';
+        let linkedResumeId = resumeId || null;
 
-        if (!resume || !resume.markdown) {
-            return NextResponse.json({ error: 'Resume not found or empty' }, { status: 404 });
+        if (resumeId) {
+            const resume = await prisma.resume.findFirst({
+                where: { id: resumeId, userId },
+                select: { markdown: true, data: true, title: true },
+            });
+
+            if (!resume) {
+                return NextResponse.json({ error: 'Resume not found' }, { status: 404 });
+            }
+
+            resumeTitle = resume.title;
+            if (resume.data && typeof resume.data === 'object' && (resume.data as any).personal) {
+                // Convert structured JSON to readable text for accurate ATS analysis
+                resumeContent = resumeDataToText(resume.data as any);
+            } else if (resume.markdown) {
+                resumeContent = resume.markdown;
+            } else {
+                return NextResponse.json({ error: 'Resume is empty' }, { status: 404 });
+            }
+        } else if (resumeText && resumeText.trim().length > 20) {
+            resumeContent = resumeText;
+            linkedResumeId = null;
+        } else {
+            return NextResponse.json({ error: 'Please select a resume or upload a document' }, { status: 400 });
         }
 
         // Pre-check credits
@@ -73,69 +169,137 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
         }
 
-        const prompt = `You are an expert ATS (Applicant Tracking System) analyzer.
-Analyze the following resume against the provided job description and return ONLY a valid JSON object with these fields:
+        // ─── STEP 1: Run Deterministic ATS Engine ────────────
+        const engineResult = runATSAnalysis(resumeContent, jobDescription);
 
+        // ─── STEP 2: AI for Qualitative Commentary Only ──────
+        const matchedKws = engineResult.keywords.filter(k => k.found).map(k => k.keyword);
+        const missingKws = engineResult.keywords.filter(k => !k.found).map(k => k.keyword);
+        const sectionsDetected = engineResult.sections.filter(s => s.detected).map(s => s.name);
+        const sectionsMissing = engineResult.sections.filter(s => !s.detected).map(s => s.name);
+
+        const prompt = `You are a professional resume reviewer. I have already computed deterministic ATS scores for a resume. Your job is to provide QUALITATIVE commentary ONLY.
+
+DO NOT produce scores — the scores are already computed deterministically. Focus on written feedback.
+
+Here are the computed results:
+- Overall ATS Score: ${engineResult.overallScore}%
+- Keyword Match: ${engineResult.keywordScore}% (${matchedKws.length} matched, ${missingKws.length} missing)
+- Matched: ${matchedKws.join(', ')}
+- Missing: ${missingKws.join(', ')}
+- Sections Found: ${sectionsDetected.join(', ')}
+- Sections Missing: ${sectionsMissing.join(', ')}
+- Bullets: ${engineResult.bulletAnalysis.totalBullets} total, ${engineResult.bulletAnalysis.actionVerbBullets} with action verbs, ${engineResult.bulletAnalysis.quantifiedBullets} with metrics
+- Word Count: ${engineResult.formatMetrics.wordCount} (~${engineResult.formatMetrics.estimatedPages} page${engineResult.formatMetrics.estimatedPages > 1 ? 's' : ''})
+
+Return ONLY valid JSON:
 {
-  "score": <number 0-100>,
-  "matched": ["keyword1", "keyword2", ...],
-  "missing": ["keyword1", "keyword2", ...],
-  "suggestions": ["suggestion1", "suggestion2", ...]
+  "overallVerdict": "2-3 sentence professional assessment of resume-JD fit",
+  "suggestions": ["4-6 specific actionable tips to improve the match"],
+  "strengthAreas": ["2-3 things the resume does well"],
+  "formatIssues": ["any formatting concerns"],
+  "sectionFeedback": {
+    "contactInfo": "brief feedback",
+    "summary": "brief feedback",
+    "experience": "brief feedback",
+    "skills": "brief feedback",
+    "education": "brief feedback",
+    "projects": "brief feedback",
+    "formatting": "brief feedback"
+  }
 }
 
-Rules:
-- Score 0-100 based on how well the resume matches the JD
-- "matched" = keywords/skills found in BOTH resume and JD
-- "missing" = important keywords in JD but NOT in resume
-- "suggestions" = specific, actionable improvements (max 5)
-- Return ONLY valid JSON, no other text
-
-Resume:
+Resume (truncated):
 ---
-${resume.markdown.substring(0, 4000)}
+${resumeContent.substring(0, 3000)}
 ---
 
-Job Description:
+Job Description (truncated):
 ---
-${jobDescription.substring(0, 3000)}
+${jobDescription.substring(0, 2000)}
 ---`;
 
-        const aiResult = await callAI({
-            messages: [{ role: 'user', content: prompt }],
-            temperature: 0.1,
-            max_tokens: 1500,
-        });
-
-        let content = aiResult.content;
-
-        // Extract JSON
-        const jsonMatch = content.match(/\{[\s\S]*\}/);
-        if (jsonMatch) content = jsonMatch[0];
-
+        let aiResult;
         try {
-            const result = JSON.parse(content);
+            aiResult = await callAI({
+                messages: [{ role: 'user', content: prompt }],
+                temperature: 0.2,
+                max_tokens: 1200,
+            });
+        } catch {
+            // AI failed — still return algorithmic results
+            aiResult = { content: '{}' };
+        }
 
-            // SUCCESS — deduct credits
-            await deductCredits(userId, 'ATS_SCORE', `ATS analysis: ${resume.title}`);
+        let aiCommentary: any = {};
+        try {
+            let content = aiResult.content;
+            const jsonMatch = content.match(/\{[\s\S]*\}/);
+            if (jsonMatch) content = jsonMatch[0];
+            aiCommentary = JSON.parse(content);
+        } catch {
+            aiCommentary = {};
+        }
 
-            // Save to DB
+        // SUCCESS — deduct credits
+        await deductCredits(userId, 'ATS_SCORE', `ATS analysis: ${resumeTitle}`);
+
+        // Build the response
+        const fullResult = {
+            // Deterministic scores from engine
+            score: engineResult.overallScore,
+            keywordScore: engineResult.keywordScore,
+            sectionScore: engineResult.sectionScore,
+            bulletScore: engineResult.bulletScore,
+            readabilityScore: engineResult.readabilityScore,
+            formatScore: engineResult.formatScore,
+
+            // Detailed breakdowns
+            matched: matchedKws,
+            missing: missingKws,
+            keywords: engineResult.keywords,
+            sections: engineResult.sections,
+            bulletAnalysis: engineResult.bulletAnalysis,
+            readabilityMetrics: engineResult.readabilityMetrics,
+            formatMetrics: engineResult.formatMetrics,
+
+            // AI qualitative commentary
+            overallVerdict: aiCommentary.overallVerdict || '',
+            suggestions: aiCommentary.suggestions || [],
+            strengthAreas: aiCommentary.strengthAreas || [],
+            formatIssues: aiCommentary.formatIssues || [],
+            sectionFeedback: aiCommentary.sectionFeedback || {},
+        };
+
+        // Save to DB if linked resume
+        if (linkedResumeId) {
             const saved = await prisma.atsScore.create({
                 data: {
-                    resumeId,
+                    resumeId: linkedResumeId,
                     userId,
-                    score: result.score || 0,
+                    score: engineResult.overallScore,
                     jdSnippet: jobDescription.substring(0, 500),
-                    matched: result.matched || [],
-                    missing: result.missing || [],
-                    suggestions: result.suggestions || [],
+                    matched: matchedKws,
+                    missing: missingKws,
+                    suggestions: aiCommentary.suggestions || [],
                 },
                 include: { resume: { select: { id: true, title: true } } },
             });
-
-            return NextResponse.json({ score: saved, result });
-        } catch {
-            console.error('ATS tracker JSON parse error:', content.substring(0, 200));
-            return NextResponse.json({ error: 'AI returned invalid response. Please try again.' }, { status: 500 });
+            return NextResponse.json({ score: saved, result: fullResult });
+        } else {
+            return NextResponse.json({
+                score: {
+                    id: 'upload-' + Date.now(),
+                    score: engineResult.overallScore,
+                    jdSnippet: jobDescription.substring(0, 500),
+                    matched: matchedKws,
+                    missing: missingKws,
+                    suggestions: aiCommentary.suggestions || [],
+                    createdAt: new Date().toISOString(),
+                    resume: { id: '', title: resumeTitle },
+                },
+                result: fullResult
+            });
         }
     } catch (err) {
         console.error('ATS tracker POST error:', err);

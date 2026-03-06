@@ -3,25 +3,18 @@ import Stripe from 'stripe';
 import prisma from '@/lib/prisma';
 import { headers } from 'next/headers';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-    apiVersion: '2025-02-24.acacia' as any,
-});
-
-// Next.js config to disable body parsing for the webhook so Stripe can verify the raw signature
-export const config = {
-    api: {
-        bodyParser: false,
-    },
-};
-
 export async function POST(req: Request) {
     const body = await req.text();
     const headersList = await headers();
     const signature = headersList.get('stripe-signature');
 
-    if (!signature || !process.env.STRIPE_WEBHOOK_SECRET) {
-        return NextResponse.json({ error: 'Missing stripe-signature or webhook secret' }, { status: 400 });
+    if (!signature || !process.env.STRIPE_WEBHOOK_SECRET || !process.env.STRIPE_SECRET_KEY) {
+        return NextResponse.json({ error: 'Missing stripe-signature or webhook secret or secret key' }, { status: 400 });
     }
+
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+        apiVersion: '2025-02-24.acacia' as any,
+    });
 
     let event: Stripe.Event;
 
