@@ -72,12 +72,9 @@ html {
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --primary: #818cf8;
-    --primary-hover: #6366f1;
-    --primary-light: rgba(129, 140, 248, 0.15);
-    --secondary: #38bdf8;
-    --secondary-light: rgba(56, 189, 248, 0.12);
-    --accent: #a78bfa;
+    --primary-hover: oklch(0.55 0.2 265);
+    --primary-light: oklch(0.35 0.1 265 / 0.15);
+    --secondary-light: oklch(0.6 0.12 230 / 0.12);
     --surface: rgba(30, 41, 59, 0.65);
     --surface-border: rgba(255, 255, 255, 0.08);
     --shadow-glass: 0 4px 24px rgba(0, 0, 0, 0.2);
@@ -2046,46 +2043,10 @@ textarea.input-field {
   opacity: 0.5;
 }
 
-/* ===========================================================
-   LANDING PAGE
-   =========================================================== */
-.landing-page {
-  display: flex;
-  flex-direction: column;
-  gap: 6rem;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 4rem 1.5rem;
-}
+/* Landing page styles removed — page uses Tailwind classes */
+/* (Landing page classes: .landing-page, .hero-*, .process-*, .templates-*, .trust-*, .features-* removed — all use Tailwind) */
 
-.hero-section {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 4rem;
-  min-height: 70vh;
-}
 
-.hero-content {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-  max-width: 600px;
-}
-
-.hero-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  background: rgba(139, 92, 246, 0.1);
-  color: var(--accent);
-  border-radius: 2rem;
-  font-weight: 600;
-  font-size: 0.9rem;
-  width: max-content;
-}
 
 .hero-title {
   font-size: clamp(2.5rem, 5vw, 4rem);
@@ -2447,162 +2408,11 @@ textarea.input-field {
   justify-content: center;
 }
 
-/* ===========================================================
-   LAYOUT (HEADER / FOOTER)
-   =========================================================== */
-.app-header {
-  position: sticky;
-  top: 0;
-  z-index: 50;
-  width: 100%;
-  background: rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--surface-border);
-}
-
-@media (prefers-color-scheme: dark) {
-  .app-header {
-    background: rgba(0, 0, 0, 0.6);
-  }
-}
-
-.app-header-inner {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0.75rem 1.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 2rem;
-}
-
-.app-brand {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-family: var(--font-sans);
-}
-
-.app-brand-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  background: linear-gradient(135deg, var(--primary), var(--accent));
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.app-brand-name {
-  font-size: 1.15rem;
-  font-weight: 800;
-  letter-spacing: -0.02em;
-}
-
-.app-nav {
-  display: flex;
-  align-items: center;
-  gap: 1.5rem;
-  flex: 1;
-}
-
-.app-nav-link {
-  font-size: 0.95rem;
-  font-weight: 500;
-  color: var(--foreground);
-  opacity: 0.6;
-  transition: all 0.2s ease;
-}
-
-.app-nav-link:hover,
-.app-nav-link.active {
-  opacity: 1;
-  color: var(--primary);
-}
-
-.app-header-right {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.mobile-menu-btn {
-  display: none;
-  background: none;
-  border: none;
-  color: var(--foreground);
-  cursor: pointer;
-}
+/* Header/footer layout styles removed — components use Tailwind */
 
 .app-main {
   min-height: calc(100vh - 120px);
   flex: 1;
-}
-
-.app-footer {
-  border-top: 1px solid var(--surface-border);
-  padding: 2rem 1.5rem;
-  background: var(--surface);
-  text-align: center;
-}
-
-.app-footer-inner {
-  max-width: 1200px;
-  margin: 0 auto;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1rem;
-}
-
-.app-footer-brand {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  font-weight: 700;
-  font-size: 1rem;
-  color: var(--primary);
-}
-
-.app-footer p {
-  font-size: 0.85rem;
-  opacity: 0.5;
-  margin: 0;
-}
-
-.app-footer-links {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  font-size: 0.75rem;
-  opacity: 0.5;
-  font-weight: 500;
-}
-
-@media (max-width: 768px) {
-  .app-nav {
-    display: none;
-    position: absolute;
-    top: 100%;
-    left: 0;
-    width: 100%;
-    background: var(--surface);
-    padding: 1rem;
-    border-bottom: 1px solid var(--surface-border);
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 1rem;
-    box-shadow: var(--shadow-lg);
-  }
-
-  .app-nav.open {
-    display: flex;
-  }
-
-  .mobile-menu-btn {
-    display: block;
-  }
 }
 
 /* ===========================================================
@@ -2630,171 +2440,7 @@ textarea.input-field {
   opacity: 0.6;
 }
 
-.dashboard-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 1.5rem;
-  margin-bottom: 3rem;
-}
-
-.dashboard-card {
-  padding: 1.5rem;
-  border-radius: var(--radius-lg);
-}
-
-.dashboard-card-header {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  color: var(--primary);
-  margin-bottom: 1rem;
-}
-
-.dashboard-card-header h3 {
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: var(--foreground);
-}
-
-.dashboard-credit-value {
-  font-size: 2.5rem;
-  font-weight: 800;
-  line-height: 1;
-  margin-bottom: 0.5rem;
-}
-
-.dashboard-card-sub {
-  font-size: 0.85rem;
-  opacity: 0.5;
-}
-
-.action-card {
-  border: 2px dashed var(--surface-border);
-  display: flex;
-  flex-direction: column;
-  transition: all 0.2s ease;
-}
-
-.action-card:hover {
-  border-color: var(--primary);
-  background: var(--primary-light);
-  transform: translateY(-2px);
-}
-
-.dashboard-section {
-  margin-bottom: 3rem;
-}
-
-.dashboard-section h2 {
-  font-size: 1.35rem;
-  font-weight: 700;
-  border-bottom: 1px solid var(--surface-border);
-  padding-bottom: 0.75rem;
-  margin-bottom: 1.5rem;
-}
-
-.dashboard-empty {
-  text-align: center;
-  padding: 3rem 1.5rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1rem;
-}
-
-.dashboard-empty p {
-  font-size: 1rem;
-  opacity: 0.5;
-  margin-bottom: 0.5rem;
-}
-
-.resume-list {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.resume-list-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 1.25rem;
-  border-radius: var(--radius-lg);
-  transition: all 0.2s ease;
-}
-
-.resume-list-item:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
-  border-color: var(--primary);
-}
-
-.resume-list-info {
-  display: flex;
-  align-items: flex-start;
-  gap: 1rem;
-}
-
-.resume-list-info h4 {
-  font-size: 1.1rem;
-  font-weight: 600;
-  margin-bottom: 0.25rem;
-}
-
-.resume-list-date {
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-  font-size: 0.85rem;
-  opacity: 0.5;
-  font-weight: 500;
-}
-
-.transaction-list {
-  display: flex;
-  flex-direction: column;
-  max-height: 400px;
-  overflow-y: auto;
-  padding-right: 0.5rem;
-}
-
-.transaction-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 1rem 0;
-  border-bottom: 1px solid var(--surface-border);
-}
-
-.transaction-item:last-child {
-  border-bottom: none;
-}
-
-.transaction-desc {
-  display: block;
-  font-size: 0.95rem;
-  font-weight: 500;
-  margin-bottom: 0.2rem;
-}
-
-.transaction-date {
-  display: block;
-  font-size: 0.8rem;
-  opacity: 0.5;
-}
-
-.transaction-amount {
-  font-size: 1.1rem;
-  font-weight: 700;
-}
-
-.transaction-amount.positive {
-  color: var(--success);
-}
-
-.transaction-amount.negative {
-  color: var(--error);
-}
+/* (Unused Dashboard classes: .dashboard-grid, .dashboard-card, .resume-list, .transaction-* removed — Dashboard uses Tailwind) */
 
 /* ===========================================================
    PROFILE PAGE
@@ -2987,9 +2633,7 @@ textarea.input-field {
   font-weight: 700;
 }
 
-.mt-4 {
-  margin-top: 1.5rem;
-}
+/* .mt-4 removed to avoid conflicting with Tailwind's mt-4 utility */
 
 /* --- RESUME MODAL STYLES --- */
 .resume-modal-overlay {

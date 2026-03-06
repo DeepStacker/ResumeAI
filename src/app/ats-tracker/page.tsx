@@ -237,15 +237,15 @@ export default function AtsTrackerPage() {
 
   if (status === 'loading' || loading) {
     return (
-      <div className="dashboard-page" style={{ display: 'flex', justifyContent: 'center', paddingTop: '6rem' }}>
+      <div className="container mx-auto flex items-center justify-center min-h-[50vh]">
         <Loader2 size={36} className="spin-icon" style={{ color: 'var(--primary)' }} />
       </div>
     );
   }
 
   return (
-    <div className="dashboard-page">
-      <div className="dashboard-header">
+    <div className="container mx-auto px-4 py-8 md:py-12 max-w-6xl">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10">
         <div>
           <h1 style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
             <BarChart3 size={28} style={{ color: 'var(--primary)' }} />
@@ -255,7 +255,7 @@ export default function AtsTrackerPage() {
             Analyze resumes against job descriptions with detailed section-by-section feedback
           </p>
         </div>
-        <button onClick={() => setShowModal(true)} className="btn-primary">
+        <button onClick={() => setShowModal(true)} className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 gap-2">
           <Plus size={16} /> Run New Analysis
         </button>
       </div>
@@ -263,15 +263,15 @@ export default function AtsTrackerPage() {
       {/* Stats cards */}
       {scores.length > 0 && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
-          <div className="glass-panel" style={{ padding: '1.25rem', textAlign: 'center' }}>
+          <div className="bg-card text-card-foreground rounded-xl border shadow-sm" style={{ padding: '1.25rem', textAlign: 'center' }}>
             <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginBottom: '0.5rem' }}>Total Analyses</p>
             <p style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--primary)' }}>{scores.length}</p>
           </div>
-          <div className="glass-panel" style={{ padding: '1.25rem', textAlign: 'center' }}>
+          <div className="bg-card text-card-foreground rounded-xl border shadow-sm" style={{ padding: '1.25rem', textAlign: 'center' }}>
             <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginBottom: '0.5rem' }}>Average Score</p>
             <p style={{ fontSize: '2rem', fontWeight: 700, color: getScoreColor(averageScore) }}>{averageScore}%</p>
           </div>
-          <div className="glass-panel" style={{ padding: '1.25rem', textAlign: 'center' }}>
+          <div className="bg-card text-card-foreground rounded-xl border shadow-sm" style={{ padding: '1.25rem', textAlign: 'center' }}>
             <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginBottom: '0.5rem' }}>Best Score</p>
             <p style={{ fontSize: '2rem', fontWeight: 700, color: getScoreColor(bestScore) }}>{bestScore}%</p>
           </div>
@@ -280,20 +280,20 @@ export default function AtsTrackerPage() {
 
       {/* Score history */}
       {scores.length === 0 ? (
-        <div className="glass-panel" style={{ padding: '3rem', textAlign: 'center' }}>
+        <div className="bg-card text-card-foreground rounded-xl border shadow-sm" style={{ padding: '3rem', textAlign: 'center' }}>
           <Target size={48} style={{ color: 'var(--primary)', opacity: 0.3, marginBottom: '1rem' }} />
           <h3 style={{ marginBottom: '0.5rem' }}>No analyses yet</h3>
           <p style={{ color: 'var(--text-muted)', marginBottom: '1.5rem' }}>
             Upload a resume or select a saved one to check its ATS compatibility.
           </p>
-          <button onClick={() => setShowModal(true)} className="btn-primary"><Plus size={16} /> Run First Analysis</button>
+          <button onClick={() => setShowModal(true)} className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 gap-2"><Plus size={16} /> Run First Analysis</button>
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
           {scores.map(score => (
             <div
               key={score.id}
-              className="glass-panel"
+              className="bg-card text-card-foreground rounded-xl border shadow-sm"
               onClick={() => { setViewingScore(score); setDetailedResult(score.fullResult || null); }}
               style={{ padding: '1.25rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', transition: 'border-color 0.2s', border: '1px solid transparent' }}
               onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--primary)'}
@@ -352,9 +352,9 @@ export default function AtsTrackerPage() {
 
       {/* Run Analysis Modal */}
       {showModal && (
-        <div className="resume-modal-overlay">
-          <div className="resume-modal-content" style={{ maxWidth: '600px', padding: '2rem' }}>
-            <button className="resume-modal-close" onClick={() => setShowModal(false)} type="button"><X size={20} /></button>
+        <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="w-full bg-background border rounded-xl shadow-2xl flex flex-col relative drop-shadow-2xl" style={{ maxWidth: '600px', padding: '2rem' }}>
+            <button className="absolute top-4 right-4 z-10 p-2 bg-background/50 hover:bg-background border border-zinc-200 rounded-md transition-colors" onClick={() => setShowModal(false)} type="button"><X size={20} /></button>
             <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.25rem', color: 'var(--primary)' }}>
               <Target size={20} /> ATS Resume Analysis
             </h3>
@@ -363,14 +363,14 @@ export default function AtsTrackerPage() {
             <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.25rem' }}>
               <button
                 onClick={() => setInputMode('select')}
-                className={inputMode === 'select' ? 'btn-primary' : 'btn-secondary'}
+                className={inputMode === 'select' ? "inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 gap-2" : "inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors bg-secondary text-secondary-foreground hover:bg-secondary/80 h-10 px-4 py-2 gap-2"}
                 style={{ flex: 1, justifyContent: 'center', fontSize: '0.85rem' }}
               >
                 <FileText size={14} /> Select Saved Resume
               </button>
               <button
                 onClick={() => setInputMode('upload')}
-                className={inputMode === 'upload' ? 'btn-primary' : 'btn-secondary'}
+                className={inputMode === 'upload' ? "inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 gap-2" : "inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors bg-secondary text-secondary-foreground hover:bg-secondary/80 h-10 px-4 py-2 gap-2"}
                 style={{ flex: 1, justifyContent: 'center', fontSize: '0.85rem' }}
               >
                 <Upload size={14} /> Upload Document
@@ -379,12 +379,12 @@ export default function AtsTrackerPage() {
 
             {/* Resume input */}
             {inputMode === 'select' ? (
-              <div className="input-group" style={{ marginBottom: '1rem' }}>
-                <label className="input-label">Select Resume</label>
+              <div className="grid w-full items-center gap-1.5" style={{ marginBottom: '1rem' }}>
+                <label className="text-sm font-medium leading-none mb-1">Select Resume</label>
                 <select
                   value={selectedResume}
                   onChange={e => setSelectedResume(e.target.value)}
-                  className="input-field"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   style={{ cursor: 'pointer' }}
                 >
                   <option value="">Choose a resume...</option>
@@ -399,8 +399,8 @@ export default function AtsTrackerPage() {
                 )}
               </div>
             ) : (
-              <div className="input-group" style={{ marginBottom: '1rem' }}>
-                <label className="input-label">Upload Resume (PDF, DOCX, TXT)</label>
+              <div className="grid w-full items-center gap-1.5" style={{ marginBottom: '1rem' }}>
+                <label className="text-sm font-medium leading-none mb-1">Upload Resume (PDF, DOCX, TXT)</label>
                 {uploadedFileName ? (
                   <div style={{
                     display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1rem',
@@ -417,7 +417,7 @@ export default function AtsTrackerPage() {
                   <button
                     onClick={() => fileInputRef.current?.click()}
                     disabled={uploading}
-                    className="btn-secondary full-width"
+                    className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors bg-secondary text-secondary-foreground hover:bg-secondary/80 h-10 px-4 py-2 w-full gap-2"
                     style={{ justifyContent: 'center', padding: '1.25rem', flexDirection: 'column', gap: '0.5rem' }}
                   >
                     {uploading ? (
@@ -430,12 +430,12 @@ export default function AtsTrackerPage() {
               </div>
             )}
 
-            <div className="input-group" style={{ marginBottom: '1.5rem' }}>
-              <label className="input-label">Job Description</label>
+            <div className="grid w-full items-center gap-1.5" style={{ marginBottom: '1.5rem' }}>
+              <label className="text-sm font-medium leading-none mb-1">Job Description</label>
               <textarea
                 value={jd}
                 onChange={e => setJd(e.target.value)}
-                className="input-field jd-textarea"
+                className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 rows={8}
                 placeholder="Paste the full job description here..."
               />
@@ -444,7 +444,7 @@ export default function AtsTrackerPage() {
             <button
               onClick={handleAnalyze}
               disabled={analyzing || !(inputMode === 'select' ? selectedResume : uploadedText.trim()) || !jd.trim()}
-              className="btn-primary full-width"
+              className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 w-full gap-2"
               style={{ justifyContent: 'center' }}
             >
               {analyzing ? <><Loader2 size={16} className="spin-icon" /> Analyzing...</> : <><Target size={16} /> Run Deep Analysis (1 credit)</>}
@@ -455,9 +455,9 @@ export default function AtsTrackerPage() {
 
       {/* Score Detail Modal */}
       {viewingScore && (
-        <div className="resume-modal-overlay">
-          <div className="resume-modal-content" style={{ maxWidth: '720px', padding: '2rem', maxHeight: '90vh' }}>
-            <button className="resume-modal-close" onClick={() => { setViewingScore(null); setDetailedResult(null); }} type="button"><X size={20} /></button>
+        <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="w-full bg-background border rounded-xl shadow-2xl flex flex-col relative drop-shadow-2xl" style={{ maxWidth: '720px', padding: '2rem', maxHeight: '90vh' }}>
+            <button className="absolute top-4 right-4 z-10 p-2 bg-background/50 hover:bg-background border border-zinc-200 rounded-md transition-colors" onClick={() => { setViewingScore(null); setDetailedResult(null); }} type="button"><X size={20} /></button>
 
             {/* Score header */}
             <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>

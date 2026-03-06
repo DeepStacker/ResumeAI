@@ -7,6 +7,7 @@ import { Sparkles, Menu, X, LogIn } from 'lucide-react';
 import UserMenu from './UserMenu';
 import { Button } from '@/components/ui/button';
 import { useSession } from 'next-auth/react';
+import { ThemeToggle } from './ThemeToggle';
 
 const NAV_ITEMS = [
   { href: '/builder', label: 'Builder' },
@@ -48,17 +49,21 @@ export default function Header() {
         <div className="flex items-center gap-4">
           {session ? (
             <>
+              <ThemeToggle />
               <UserMenu />
               <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setMobileOpen(!mobileOpen)}>
                 {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
               </Button>
             </>
           ) : (
-            <Link href="/auth/signin">
-              <Button size="sm" className="gap-2">
-                <LogIn className="h-4 w-4" /> Sign In
-              </Button>
-            </Link>
+            <div className="flex items-center gap-2">
+              <ThemeToggle />
+              <Link href="/auth/signin">
+                <Button size="sm" className="gap-2">
+                  <LogIn className="h-4 w-4" /> Sign In
+                </Button>
+              </Link>
+            </div>
           )}
         </div>
       </div>
