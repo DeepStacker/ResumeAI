@@ -18,7 +18,7 @@ export default function LandingPage() {
   const ctaLabel = status === 'authenticated' ? 'Go to Builder' : 'Start Building for Free';
 
   return (
-    <div className="flex flex-col min-h-screen bg-background text-foreground selection:bg-primary selection:text-primary-foreground">
+    <div className="flex flex-col min-h-screen w-full overflow-x-hidden bg-background text-foreground selection:bg-primary selection:text-primary-foreground">
       {/* Hero Section */}
       <section className="relative px-6 pt-24 pb-32 md:pt-36 md:pb-40 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-zinc-200/40 via-background to-background dark:from-zinc-900/40" />

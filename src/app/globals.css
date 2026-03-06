@@ -82,25 +82,13 @@ html {
   }
 }
 
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
 body {
   font-family: var(--font-geist-sans), var(--font-sans);
   min-height: 100vh;
-  width: 100vw;
-  overflow-x: hidden;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   background-color: var(--background);
   color: var(--foreground);
-  display: flex;
-  flex-direction: column;
 }
 
 a {
@@ -111,15 +99,16 @@ a {
 /* ===== App Layout ===== */
 .app-main {
   flex: 1;
-  display: flex;
-  flex-direction: column;
   width: 100%;
 }
 
-@layer components {
-  .container {
-    @apply w-full mx-auto px-4 md:px-8 max-w-7xl;
-  }
+.container {
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+  max-width: 1280px;
 }
 
 /* ===== Glass Panel ===== */
