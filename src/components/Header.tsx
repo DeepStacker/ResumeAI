@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Sparkles, Menu, X, LogIn } from 'lucide-react';
 import UserMenu from './UserMenu';
+import { Button } from '@/components/ui/button';
 import { useSession } from 'next-auth/react';
 
 const NAV_ITEMS = [
@@ -23,18 +24,20 @@ export default function Header() {
   if (pathname?.startsWith('/auth')) return null;
 
   return (
-    <header className="app-header">
-      <div className="app-header-inner">
-        <Link href="/" className="app-brand">
-          <div className="app-brand-icon"><Sparkles size={18} /></div>
-          <span className="app-brand-name">ResumeAI</span>
+    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="container mx-auto flex h-16 items-center justify-between px-4 md:px-8">
+        <Link href="/" className="flex items-center gap-2 transition-opacity hover:opacity-80">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+            <Sparkles size={18} />
+          </div>
+          <span className="text-xl font-bold tracking-tight">ResumeAI</span>
         </Link>
 
         {session && (
-          <nav className={`app-nav ${mobileOpen ? 'open' : ''}`}>
+          <nav className={`md:flex items-center gap-6 ${mobileOpen ? 'absolute top-16 left-0 w-full flex-col bg-background p-4 border-b shadow-lg md:static md:w-auto md:p-0 md:border-none md:shadow-none' : 'hidden'}`}>
             {NAV_ITEMS.map(item => (
               <Link key={item.href} href={item.href}
-                className={`app-nav-link ${pathname === item.href ? 'active' : ''}`}
+                className={`text-sm font-medium transition-colors hover:text-primary ${pathname === item.href ? 'text-primary' : 'text-muted-foreground'}`}
                 onClick={() => setMobileOpen(false)}>
                 {item.label}
               </Link>
@@ -42,17 +45,19 @@ export default function Header() {
           </nav>
         )}
 
-        <div className="app-header-right">
+        <div className="flex items-center gap-4">
           {session ? (
             <>
               <UserMenu />
-              <button className="mobile-menu-btn" onClick={() => setMobileOpen(!mobileOpen)} type="button">
-                {mobileOpen ? <X size={20} /> : <Menu size={20} />}
-              </button>
+              <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setMobileOpen(!mobileOpen)}>
+                {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              </Button>
             </>
           ) : (
-            <Link href="/auth/signin" className="btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', padding: '0.5rem 1rem', fontSize: '0.9rem' }}>
-              <LogIn size={16} /> Sign In
+            <Link href="/auth/signin">
+              <Button size="sm" className="gap-2">
+                <LogIn className="h-4 w-4" /> Sign In
+              </Button>
             </Link>
           )}
         </div>

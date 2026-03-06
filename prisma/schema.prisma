@@ -94,6 +94,7 @@ model AtsScore {
   matched     Json?
   missing     Json?
   suggestions Json?
+  fullResult  Json?
   createdAt   DateTime @default(now())
 
   resume      Resume   @relation(fields: [resumeId], references: [id], onDelete: Cascade)

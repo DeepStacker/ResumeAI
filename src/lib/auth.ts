@@ -62,7 +62,7 @@ if (process.env.LINKEDIN_CLIENT_ID && process.env.LINKEDIN_CLIENT_SECRET) {
 }
 
 export const authOptions: NextAuthOptions = {
-    adapter: PrismaAdapter(prisma) as any,
+    adapter: PrismaAdapter(prisma) as Exclude<NextAuthOptions['adapter'], undefined>,
     session: { strategy: 'jwt' },
     pages: { signIn: '/auth/signin' },
     providers,
@@ -70,15 +70,15 @@ export const authOptions: NextAuthOptions = {
         async jwt({ token, user }) {
             if (user) {
                 token.id = user.id;
-                token.credits = (user as any).credits;
+                token.credits = (user as { credits?: number }).credits;
             }
             return token;
         },
         async session({ session, token }) {
             if (session.user) {
-                (session.user as any).id = token.id;
+                (session.user as { id?: string; credits?: number }).id = token.id as string;
                 const dbUser = await prisma.user.findUnique({ where: { id: token.id as string } });
-                (session.user as any).credits = dbUser?.credits ?? 0;
+                (session.user as { id?: string; credits?: number }).credits = dbUser?.credits ?? 0;
             }
             return session;
         },

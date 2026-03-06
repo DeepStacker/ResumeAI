@@ -6,9 +6,10 @@ import { useSession } from 'next-auth/react';
 import {
   Sparkles, FileText, Target, Zap, ChevronRight, CheckCircle2,
   Upload, Briefcase, GraduationCap, Code, MessageCircle,
-  BarChart3, Share2, Bot, Award, Languages, Globe, Shield,
-  ArrowRight, Star, TrendingUp, ClipboardList
+  BarChart3, Share2, Bot, ArrowRight, ClipboardList, Globe
 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default function LandingPage() {
   const { status } = useSession();
@@ -17,303 +18,211 @@ export default function LandingPage() {
   const ctaLabel = status === 'authenticated' ? 'Go to Builder' : 'Start Building for Free';
 
   return (
-    <div className="landing-page">
+    <div className="flex flex-col min-h-screen bg-background text-foreground selection:bg-primary selection:text-primary-foreground">
       {/* Hero Section */}
-      <section className="hero-section">
-        <div className="hero-content">
-          <div className="hero-badge">
-            <Sparkles size={16} /> <span>AI-Powered Career Platform</span>
+      <section className="relative px-6 pt-24 pb-32 md:pt-36 md:pb-40 overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-zinc-200/40 via-background to-background dark:from-zinc-900/40" />
+        <div className="container relative z-10 mx-auto text-center max-w-4xl">
+          <div className="inline-flex items-center rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-sm font-medium text-primary mb-6 transition-colors">
+            <Sparkles className="w-4 h-4 mr-2" /> 
+            AI-Powered Career Platform
           </div>
-          <h1 className="hero-title">
-            Your Entire Career Toolkit, <br />
-            <span className="text-gradient">Powered by AI</span>
+          <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight mb-6">
+            Your Entire Career Toolkit, <br className="hidden md:block" />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-zinc-800 to-zinc-500 dark:from-zinc-300 dark:to-zinc-600">
+              Powered by AI
+            </span>
           </h1>
-          <p className="hero-subtitle">
+          <p className="text-lg md:text-xl text-muted-foreground mb-10 max-w-2xl mx-auto leading-relaxed">
             Build ATS-optimized resumes, generate tailored cover letters, track your ATS scores, and chat with an AI career counselor — all in one platform.
           </p>
-          <div className="hero-actions">
-            <Link href={ctaHref} className="btn-primary hero-btn">
-              {ctaLabel} <ChevronRight size={18} />
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <Link href={ctaHref}>
+              <Button size="lg" className="h-12 px-8 text-base shadow-xl hover:scale-105 transition-transform">
+                {ctaLabel} <ChevronRight className="w-5 h-5 ml-2" />
+              </Button>
             </Link>
-            {status !== 'authenticated' && (
-              <p className="hero-subtext">Includes 10 free AI credits. No credit card required.</p>
-            )}
           </div>
-        </div>
-
-        <div className="hero-visual glass-panel" style={{ padding: 0, overflow: 'hidden' }}>
-          <img src="/images/hero.png" alt="Resume Builder Dashboard" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          {status !== 'authenticated' && (
+            <p className="mt-4 text-sm text-muted-foreground/80">Includes 10 free AI credits. No credit card required.</p>
+          )}
         </div>
       </section>
 
       {/* Feature Highlights */}
-      <section className="process-section">
-        <div className="features-header">
-          <h2>Everything You Need to Land the Job</h2>
-          <p>Four powerful tools working together to maximize your chances.</p>
-        </div>
-        <div className="process-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))' }}>
-          <div className="process-step glass-panel" style={{ borderTop: '3px solid var(--primary)' }}>
-            <FileText size={24} className="step-icon" />
-            <h4>AI Resume Builder</h4>
-            <p>8-step intelligent builder with smart parsing. Upload an existing resume or start from scratch — AI handles the rest.</p>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem', marginTop: '0.75rem' }}>
-              <span className="skill-chip" style={{ fontSize: '0.7rem', padding: '0.15rem 0.5rem' }}>PDF/DOCX Upload</span>
-              <span className="skill-chip" style={{ fontSize: '0.7rem', padding: '0.15rem 0.5rem' }}>XYZ Bullets</span>
-              <span className="skill-chip" style={{ fontSize: '0.7rem', padding: '0.15rem 0.5rem' }}>3 Templates</span>
-            </div>
+      <section className="py-24 bg-zinc-50/50 dark:bg-zinc-950/50 border-y">
+        <div className="container mx-auto px-6">
+          <div className="text-center max-w-2xl mx-auto mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 tracking-tight">Everything You Need to Land the Job</h2>
+            <p className="text-muted-foreground text-lg">Four powerful tools working together to maximize your chances.</p>
           </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl mx-auto">
+            <Card className="border-t-4 border-t-primary shadow-sm hover:shadow-md transition-shadow">
+              <CardHeader>
+                <FileText className="w-10 h-10 text-primary mb-2" />
+                <CardTitle>AI Resume Builder</CardTitle>
+                <CardDescription className="text-base text-foreground/80 mt-2">
+                  8-step intelligent builder with smart parsing. Upload an existing resume or start from scratch — AI handles the rest.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex flex-wrap gap-2">
+                <span className="inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-medium">PDF/DOCX Upload</span>
+                <span className="inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-medium">XYZ Bullets</span>
+                <span className="inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-medium">3 Templates</span>
+              </CardContent>
+            </Card>
 
-          <div className="process-step glass-panel" style={{ borderTop: '3px solid var(--accent)' }}>
-            <MessageCircle size={24} className="step-icon" style={{ color: 'var(--accent)' }} />
-            <h4>AI Career Chatbot</h4>
-            <p>Not sure where to start? Chat with our AI counselor — it learns about you through conversation and builds your resume for you.</p>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem', marginTop: '0.75rem' }}>
-              <span className="skill-chip" style={{ fontSize: '0.7rem', padding: '0.15rem 0.5rem' }}>Free Conversation</span>
-              <span className="skill-chip" style={{ fontSize: '0.7rem', padding: '0.15rem 0.5rem' }}>1-Click Generate</span>
-            </div>
-          </div>
+            <Card className="border-t-4 border-t-zinc-500 shadow-sm hover:shadow-md transition-shadow">
+              <CardHeader>
+                <MessageCircle className="w-10 h-10 text-zinc-500 mb-2" />
+                <CardTitle>AI Career Chatbot</CardTitle>
+                <CardDescription className="text-base text-foreground/80 mt-2">
+                  Not sure where to start? Chat with our AI counselor — it learns about you through conversation and builds your resume for you.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex flex-wrap gap-2">
+                <span className="inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-medium">Free Conversation</span>
+                <span className="inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-medium">1-Click Generate</span>
+              </CardContent>
+            </Card>
 
-          <div className="process-step glass-panel" style={{ borderTop: '3px solid var(--success)' }}>
-            <BarChart3 size={24} className="step-icon" style={{ color: 'var(--success)' }} />
-            <h4>ATS Score Tracker</h4>
-            <p>Run unlimited analyses to see how your resume matches any job description. Track scores, find missing keywords, and improve.</p>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem', marginTop: '0.75rem' }}>
-              <span className="skill-chip" style={{ fontSize: '0.7rem', padding: '0.15rem 0.5rem' }}>Score History</span>
-              <span className="skill-chip" style={{ fontSize: '0.7rem', padding: '0.15rem 0.5rem' }}>Keyword Matching</span>
-            </div>
-          </div>
+            <Card className="border-t-4 border-t-emerald-500 shadow-sm hover:shadow-md transition-shadow">
+              <CardHeader>
+                <BarChart3 className="w-10 h-10 text-emerald-500 mb-2" />
+                <CardTitle>ATS Score Tracker</CardTitle>
+                <CardDescription className="text-base text-foreground/80 mt-2">
+                  Run unlimited analyses to see how your resume matches any job description. Track scores, find missing keywords, and improve.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex flex-wrap gap-2">
+                <span className="inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-medium">Score History</span>
+                <span className="inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-medium">Keyword Matching</span>
+              </CardContent>
+            </Card>
 
-          <div className="process-step glass-panel" style={{ borderTop: '3px solid #f59e0b' }}>
-            <ClipboardList size={24} className="step-icon" style={{ color: '#f59e0b' }} />
-            <h4>Smart Cover Letters</h4>
-            <p>Generate tailored cover letters from any saved resume. Paste a new JD and get a perfectly customized letter in seconds.</p>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem', marginTop: '0.75rem' }}>
-              <span className="skill-chip" style={{ fontSize: '0.7rem', padding: '0.15rem 0.5rem' }}>JD-Tailored</span>
-              <span className="skill-chip" style={{ fontSize: '0.7rem', padding: '0.15rem 0.5rem' }}>Editable</span>
-            </div>
+            <Card className="border-t-4 border-t-amber-500 shadow-sm hover:shadow-md transition-shadow">
+              <CardHeader>
+                <ClipboardList className="w-10 h-10 text-amber-500 mb-2" />
+                <CardTitle>Smart Cover Letters</CardTitle>
+                <CardDescription className="text-base text-foreground/80 mt-2">
+                  Generate tailored cover letters from any saved resume. Paste a new JD and get a perfectly customized letter in seconds.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex flex-wrap gap-2">
+                <span className="inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-medium">JD-Tailored</span>
+                <span className="inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-medium">Editable</span>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </section>
 
       {/* The Step-by-Step Process */}
-      <section className="process-section" style={{ paddingTop: '2rem' }}>
-        <div className="features-header">
-          <h2>The 8-Step Intelligent Builder</h2>
-          <p>Build a professional resume in minutes, not hours.</p>
-        </div>
-        <div className="process-grid">
-          <div className="process-step glass-panel">
-            <Upload size={20} className="step-icon" />
-            <h4>1. Smart Parsing</h4>
-            <p>Upload your old PDF/Word doc — AI instantly extracts all your data.</p>
+      <section className="py-24">
+        <div className="container mx-auto px-6">
+          <div className="text-center max-w-2xl mx-auto mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 tracking-tight">The 8-Step Intelligent Builder</h2>
+            <p className="text-muted-foreground text-lg">Build a professional resume in minutes, not hours.</p>
           </div>
-          <div className="process-step glass-panel">
-            <Briefcase size={20} className="step-icon" />
-            <h4>2. Personal Info</h4>
-            <p>Your contact details, LinkedIn, GitHub, and portfolio links.</p>
-          </div>
-          <div className="process-step glass-panel">
-            <Target size={20} className="step-icon" />
-            <h4>3. Target Role & JD</h4>
-            <p>Paste the job description — AI tailors everything to match it.</p>
-          </div>
-          <div className="process-step glass-panel">
-            <Code size={20} className="step-icon" />
-            <h4>4. AI-Powered Skills</h4>
-            <p>AI suggests skills from your target role and extracts keywords from the JD.</p>
-          </div>
-          <div className="process-step glass-panel">
-            <Zap size={20} className="step-icon" />
-            <h4>5. XYZ Experience</h4>
-            <p>AI rewrites weak bullets into high-impact Google XYZ formula achievements.</p>
-          </div>
-          <div className="process-step glass-panel">
-            <Globe size={20} className="step-icon" />
-            <h4>6. Projects</h4>
-            <p>Showcase your best work with AI-enhanced descriptions and tech stacks.</p>
-          </div>
-          <div className="process-step glass-panel">
-            <GraduationCap size={20} className="step-icon" />
-            <h4>7. Education</h4>
-            <p>Degrees, coursework, GPA — organized for maximum recruiter impact.</p>
-          </div>
-          <div className="process-step glass-panel">
-            <Sparkles size={20} className="step-icon" />
-            <h4>8. Review & Generate</h4>
-            <p>AI summary, certifications, languages, template selection — then generate.</p>
-          </div>
-        </div>
-      </section>
-
-      {/* AI Features Deep Dive */}
-      <section className="process-section" style={{ paddingTop: '2rem' }}>
-        <div className="features-header">
-          <h2>AI That Actually Helps</h2>
-          <p>Every AI feature is designed to save you time and improve your chances.</p>
-        </div>
-        <div className="process-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
-          <div className="process-step glass-panel">
-            <Bot size={20} className="step-icon" style={{ color: 'var(--accent)' }} />
-            <h4>Career Counselor Chat</h4>
-            <p>Have a conversation with AI to discover your strengths and build your resume naturally.</p>
-          </div>
-          <div className="process-step glass-panel">
-            <Sparkles size={20} className="step-icon" />
-            <h4>Smart Skill Suggestions</h4>
-            <p>AI suggests skills based on your target role and extracts missing keywords from job descriptions.</p>
-          </div>
-          <div className="process-step glass-panel">
-            <Zap size={20} className="step-icon" style={{ color: '#f59e0b' }} />
-            <h4>XYZ Bullet Rewrite</h4>
-            <p>Transform "Did X" into "Accomplished X, measured by Y, by doing Z" automatically.</p>
-          </div>
-          <div className="process-step glass-panel">
-            <TrendingUp size={20} className="step-icon" style={{ color: 'var(--success)' }} />
-            <h4>Role-Based Ideas</h4>
-            <p>AI generates relevant achievement bullets based on just your job title.</p>
-          </div>
-          <div className="process-step glass-panel">
-            <Target size={20} className="step-icon" style={{ color: '#ef4444' }} />
-            <h4>ATS Score Analysis</h4>
-            <p>See exactly which keywords match and which are missing for any job description.</p>
-          </div>
-          <div className="process-step glass-panel">
-            <Share2 size={20} className="step-icon" style={{ color: '#0ea5e9' }} />
-            <h4>Public Sharing</h4>
-            <p>Share your resume via a public link — perfect for recruiters and LinkedIn profiles.</p>
-          </div>
-        </div>
-      </section>
-
-      {/* Templates Section */}
-      <section className="templates-showcase">
-        <div className="features-header">
-          <h2>ATS-Optimized Templates</h2>
-          <p>Designed to pass ATS systems, not just look pretty. Choose from 3 proven formats.</p>
-        </div>
-        <div className="templates-grid">
-          <div className="template-mockup glass-panel">
-            <div className="template-preview professional-preview" style={{ padding: 0, overflow: 'hidden', border: 'none' }}>
-              <img src="/images/professional.png" alt="Professional Template" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            </div>
-            <h4>Professional</h4>
-            <p>Clean, traditional corporate layout for finance, law, and enterprise roles.</p>
-          </div>
-          <div className="template-mockup glass-panel">
-            <div className="template-preview modern-preview" style={{ padding: 0, overflow: 'hidden', border: 'none' }}>
-              <img src="/images/modern.png" alt="Modern Template" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            </div>
-            <h4>Modern</h4>
-            <p>Contemporary design with accent sections. Perfect for tech and marketing.</p>
-          </div>
-          <div className="template-mockup glass-panel">
-            <div className="template-preview minimal-preview" style={{ padding: 0, overflow: 'hidden', border: 'none' }}>
-              <img src="/images/minimal.png" alt="Minimal Template" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            </div>
-            <h4>Minimal</h4>
-            <p>Ultra-clean, maximally ATS-parseable layout focused on content.</p>
-          </div>
-        </div>
-      </section>
-
-      {/* Credit Costs */}
-      <section className="process-section" style={{ paddingTop: '2rem' }}>
-        <div className="features-header">
-          <h2>Transparent Credit Costs</h2>
-          <p>Know exactly what each action costs. No hidden fees.</p>
-        </div>
-        <div className="process-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}>
-          <div className="process-step glass-panel" style={{ textAlign: 'center' }}>
-            <FileText size={20} className="step-icon" />
-            <h4>Generate Resume</h4>
-            <p style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--primary)' }}>2 credits</p>
-          </div>
-          <div className="process-step glass-panel" style={{ textAlign: 'center' }}>
-            <ClipboardList size={20} className="step-icon" />
-            <h4>Cover Letter</h4>
-            <p style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--accent)' }}>2 credits</p>
-          </div>
-          <div className="process-step glass-panel" style={{ textAlign: 'center' }}>
-            <Upload size={20} className="step-icon" />
-            <h4>Parse Resume</h4>
-            <p style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--success)' }}>1 credit</p>
-          </div>
-          <div className="process-step glass-panel" style={{ textAlign: 'center' }}>
-            <BarChart3 size={20} className="step-icon" />
-            <h4>ATS Analysis</h4>
-            <p style={{ fontSize: '1.5rem', fontWeight: 700, color: '#f59e0b' }}>1 credit</p>
-          </div>
-          <div className="process-step glass-panel" style={{ textAlign: 'center' }}>
-            <Zap size={20} className="step-icon" />
-            <h4>Bullet Rewrite</h4>
-            <p style={{ fontSize: '1.5rem', fontWeight: 700, color: '#f97316' }}>1 credit</p>
-          </div>
-          <div className="process-step glass-panel" style={{ textAlign: 'center' }}>
-            <MessageCircle size={20} className="step-icon" />
-            <h4>AI Chat</h4>
-            <p style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--success)' }}>Free</p>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[
+              { icon: Upload, title: "1. Smart Parsing", desc: "Upload your old PDF/Word doc — AI instantly extracts all your data." },
+              { icon: Briefcase, title: "2. Personal Info", desc: "Your contact details, LinkedIn, GitHub, and portfolio links." },
+              { icon: Target, title: "3. Target Role & JD", desc: "Paste the job description — AI tailors everything to match it." },
+              { icon: Code, title: "4. AI-Powered Skills", desc: "AI suggests skills from your target role and extracts keywords." },
+              { icon: Zap, title: "5. XYZ Experience", desc: "AI rewrites weak bullets into high-impact Google XYZ formula." },
+              { icon: Globe, title: "6. Projects", desc: "Showcase your best work with AI-enhanced descriptions." },
+              { icon: GraduationCap, title: "7. Education", desc: "Degrees, coursework, GPA — organized for maximum impact." },
+              { icon: Sparkles, title: "8. Review & Generate", desc: "AI summary, certifications, languages, template selection." }
+            ].map((step, i) => (
+              <Card key={i} className="bg-muted/30 border-none shadow-none hover:bg-muted/50 transition-colors">
+                <CardHeader className="p-6">
+                  <div className="w-12 h-12 bg-background rounded-xl border flex items-center justify-center mb-4 shadow-sm">
+                    <step.icon className="w-6 h-6 text-primary" />
+                  </div>
+                  <CardTitle className="text-lg">{step.title}</CardTitle>
+                  <CardDescription className="text-sm mt-2">{step.desc}</CardDescription>
+                </CardHeader>
+              </Card>
+            ))}
           </div>
         </div>
       </section>
 
       {/* Pricing Section */}
-      <section className="pricing-section" style={{ display: 'flex', flexDirection: 'column', gap: '3rem', marginTop: '2rem' }}>
-        <div className="features-header">
-          <h2>Simple, Pay-As-You-Go Pricing</h2>
-          <p>No monthly subscriptions. Just buy AI tokens when you need them.</p>
-        </div>
-        <div className="templates-grid" style={{ maxWidth: '900px', margin: '0 auto', width: '100%' }}>
-          {/* Free Tier */}
-          <div className="template-mockup glass-panel" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', textAlign: 'left', padding: '2.5rem' }}>
-            <h4 style={{ color: 'var(--text-muted)', fontSize: '1.2rem', marginBottom: '0.5rem' }}>Trial</h4>
-            <div style={{ fontSize: '3rem', fontWeight: 800, marginBottom: '0.5rem', color: 'var(--foreground)' }}>$0</div>
-            <p style={{ opacity: 0.7, marginBottom: '2rem' }}>Everything to get started.</p>
-
-            <ul className="trust-list" style={{ marginBottom: '2.5rem', flex: 1 }}>
-              <li style={{ fontSize: '0.95rem' }}><CheckCircle2 size={16} color="var(--success)" /> 10 Free AI Credits</li>
-              <li style={{ fontSize: '0.95rem' }}><CheckCircle2 size={16} color="var(--success)" /> Up to 5 Resume Generations</li>
-              <li style={{ fontSize: '0.95rem' }}><CheckCircle2 size={16} color="var(--success)" /> AI Career Chatbot (Unlimited)</li>
-              <li style={{ fontSize: '0.95rem' }}><CheckCircle2 size={16} color="var(--success)" /> ATS Score Analysis</li>
-              <li style={{ fontSize: '0.95rem' }}><CheckCircle2 size={16} color="var(--success)" /> Public Resume Sharing</li>
-              <li style={{ fontSize: '0.95rem' }}><CheckCircle2 size={16} color="var(--success)" /> 3 ATS-Optimized Templates</li>
-            </ul>
-            <Link href="/auth/signin" className="btn-secondary" style={{ width: '100%', justifyContent: 'center' }}>Create Free Account</Link>
+      <section className="py-24 bg-zinc-900 text-zinc-50 dark:bg-zinc-950">
+        <div className="container mx-auto px-6">
+          <div className="text-center max-w-2xl mx-auto mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">Simple, Pay-As-You-Go Pricing</h2>
+            <p className="text-zinc-400 text-lg">No monthly subscriptions. Just buy AI tokens when you need them.</p>
           </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            {/* Free Tier */}
+            <Card className="bg-zinc-800/50 border-zinc-700 text-zinc-100 flex flex-col">
+              <CardHeader>
+                <CardTitle className="text-xl text-zinc-400">Trial</CardTitle>
+                <div className="text-5xl font-extrabold mt-4 mb-2">$0</div>
+                <CardDescription className="text-zinc-400">Everything to get started.</CardDescription>
+              </CardHeader>
+              <CardContent className="flex-1 flex flex-col">
+                <ul className="space-y-4 mb-8 flex-1">
+                  {[
+                    "10 Free AI Credits", "Up to 5 Resume Generations", "AI Career Chatbot (Unlimited)",
+                    "ATS Score Analysis", "Public Resume Sharing", "3 ATS-Optimized Templates"
+                  ].map((feature, i) => (
+                    <li key={i} className="flex items-center text-sm"><CheckCircle2 className="w-5 h-5 mr-3 text-emerald-400" /> {feature}</li>
+                  ))}
+                </ul>
+                <Link href="/auth/signin" className="w-full mt-auto block">
+                  <Button variant="outline" className="w-full bg-transparent border-zinc-600 hover:bg-zinc-700 text-zinc-100">Create Free Account</Button>
+                </Link>
+              </CardContent>
+            </Card>
 
-          {/* Pro Tier */}
-          <div className="template-mockup" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', textAlign: 'left', padding: '2.5rem', background: 'var(--surface)', border: '2px solid var(--primary)', borderRadius: 'var(--radius-xl)', position: 'relative', boxShadow: '0 20px 40px -10px rgba(79, 70, 229, 0.2)' }}>
-            <div style={{ position: 'absolute', top: '-14px', right: '2rem', background: 'var(--primary)', color: 'white', padding: '0.25rem 1rem', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase' }}>Most Popular</div>
-            <h4 style={{ color: 'var(--primary)', fontSize: '1.2rem', marginBottom: '0.5rem' }}>Pro Tokens</h4>
-            <div style={{ fontSize: '3rem', fontWeight: 800, marginBottom: '0.5rem', color: 'var(--foreground)' }}>$5 <span style={{ fontSize: '1rem', fontWeight: 500, color: 'var(--text-muted)' }}>/ one-time</span></div>
-            <p style={{ opacity: 0.7, marginBottom: '2rem' }}>For serious job seekers.</p>
-
-            <ul className="trust-list" style={{ marginBottom: '2.5rem', flex: 1 }}>
-              <li style={{ fontSize: '0.95rem' }}><CheckCircle2 size={16} color="var(--success)" /> 50 AI Credits</li>
-              <li style={{ fontSize: '0.95rem' }}><CheckCircle2 size={16} color="var(--success)" /> 25+ Resume Generations</li>
-              <li style={{ fontSize: '0.95rem' }}><CheckCircle2 size={16} color="var(--success)" /> Unlimited Cover Letters</li>
-              <li style={{ fontSize: '0.95rem' }}><CheckCircle2 size={16} color="var(--success)" /> Unlimited ATS Score Tracking</li>
-              <li style={{ fontSize: '0.95rem' }}><CheckCircle2 size={16} color="var(--success)" /> XYZ Bullet Rewrites</li>
-              <li style={{ fontSize: '0.95rem' }}><CheckCircle2 size={16} color="var(--success)" /> JD Keyword Extraction</li>
-              <li style={{ fontSize: '0.95rem' }}><CheckCircle2 size={16} color="var(--success)" /> Lifetime Access to All Resumes</li>
-            </ul>
-            <Link href={ctaHref} className="btn-primary" style={{ width: '100%', justifyContent: 'center' }}>Get Started <ArrowRight size={16} /></Link>
+            {/* Pro Tier */}
+            <Card className="bg-zinc-50 border-zinc-200 text-zinc-900 dark:bg-zinc-900 dark:border-zinc-700 dark:text-zinc-100 flex flex-col relative transform md:-translate-y-4 shadow-2xl">
+              <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground px-4 py-1 rounded-full text-xs font-bold uppercase tracking-widest">
+                Most Popular
+              </div>
+              <CardHeader>
+                <CardTitle className="text-xl text-primary">Pro Tokens</CardTitle>
+                <div className="text-5xl font-extrabold mt-4 mb-2">$5 <span className="text-lg font-medium text-muted-foreground">/ one-time</span></div>
+                <CardDescription>For serious job seekers.</CardDescription>
+              </CardHeader>
+              <CardContent className="flex-1 flex flex-col">
+                <ul className="space-y-4 mb-8 flex-1">
+                  {[
+                    "50 AI Credits", "25+ Resume Generations", "Unlimited Cover Letters",
+                    "Unlimited ATS Score Tracking", "XYZ Bullet Rewrites", "JD Keyword Extraction",
+                    "Lifetime Access to All Resumes"
+                  ].map((feature, i) => (
+                    <li key={i} className="flex items-center text-sm"><CheckCircle2 className="w-5 h-5 mr-3 text-primary" /> {feature}</li>
+                  ))}
+                </ul>
+                <Link href={ctaHref} className="w-full mt-auto block">
+                  <Button className="w-full h-12 text-base">Get Started <ArrowRight className="w-4 h-4 ml-2" /></Button>
+                </Link>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </section>
 
       {/* Trust / CTA Section */}
-      <section className="trust-section">
-        <div className="trust-content" style={{ maxWidth: '800px', textAlign: 'center' }}>
-          <h2>Ready to Beat the ATS?</h2>
-          <p style={{ fontSize: '1.1rem', opacity: 0.8, marginBottom: '1.5rem' }}>
+      <section className="py-24">
+        <div className="container mx-auto px-6 text-center max-w-3xl">
+          <h2 className="text-4xl font-extrabold tracking-tight mb-6">Ready to Beat the ATS?</h2>
+          <p className="text-xl text-muted-foreground mb-10 leading-relaxed">
             Join professionals using AI to build resumes that actually get past the algorithms. Chat with our AI counselor, build your resume, track your ATS score, and land more interviews.
           </p>
-          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-            <Link href={ctaHref} className="btn-primary hero-btn">
-              {ctaLabel} <ChevronRight size={18} />
-            </Link>
-          </div>
+          <Link href={ctaHref}>
+            <Button size="lg" className="h-14 px-10 text-lg shadow-xl hover:scale-105 transition-transform">
+              {ctaLabel} <ChevronRight className="w-5 h-5 ml-2" />
+            </Button>
+          </Link>
         </div>
       </section>
     </div>

@@ -18,7 +18,15 @@ export async function GET() {
             where: { userId },
             orderBy: { createdAt: 'desc' },
             take: 50,
-            include: {
+            select: {
+                id: true,
+                score: true,
+                jdSnippet: true,
+                matched: true,
+                missing: true,
+                suggestions: true,
+                fullResult: true,
+                createdAt: true,
                 resume: { select: { id: true, title: true } },
             },
         });
@@ -282,6 +290,7 @@ ${jobDescription.substring(0, 2000)}
                     matched: matchedKws,
                     missing: missingKws,
                     suggestions: aiCommentary.suggestions || [],
+                    fullResult: fullResult as any,
                 },
                 include: { resume: { select: { id: true, title: true } } },
             });

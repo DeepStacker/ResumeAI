@@ -7,8 +7,7 @@ import ResumeForm from '@/components/ResumeForm';
 import ResumePreview from '@/components/ResumePreview';
 import { ResumeData } from '@/types/resume';
 import { useResumeStore } from '@/store/useResumeStore';
-import styles from './page.module.css';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, Loader2 } from 'lucide-react';
 
 export default function Home() {
   const { data: session, status } = useSession();
@@ -20,10 +19,8 @@ export default function Home() {
 
   if (status === 'loading') {
     return (
-      <div className={styles.pageContainer}>
-        <div className="loading-screen">
-          <div className="spin-icon" style={{ width: 36, height: 36, border: '3px solid var(--surface-border)', borderTopColor: 'var(--primary)', borderRadius: '50%' }} />
-        </div>
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -77,22 +74,23 @@ export default function Home() {
   const hasResume = resumeMarkdown !== null;
 
   return (
-    <div className={styles.pageContainer}>
+    <div className="min-h-screen bg-muted/30 p-4 md:p-8 max-w-[1600px] mx-auto transition-all duration-500">
       {error && (
-        <div className={styles.errorMessage}>
-          <AlertCircle size={18} />
-          <p>{error}</p>
-          <button onClick={() => setError(null)} className={styles.errorDismiss}>&times;</button>
+        <div className="flex items-center gap-2 p-4 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-lg max-w-3xl mx-auto mb-6">
+          <AlertCircle className="h-4 w-4 shrink-0" />
+          <p className="flex-1">{error}</p>
+          <button onClick={() => setError(null)} className="text-destructive hover:opacity-70">&times;</button>
         </div>
       )}
 
-      <main className={`${styles.mainLayout} ${hasResume ? styles.withPreview : styles.formOnly}`}>
-        <div className={styles.formSection}>
+      <main className={`grid gap-6 md:gap-8 items-start transition-all duration-400 ease-in-out ${hasResume ? 'grid-cols-1 lg:grid-cols-[2fr_3fr] xl:gap-10' : 'grid-cols-1 max-w-4xl mx-auto'}`}>
+        <div className="order-1 rounded-xl border bg-card shadow-sm">
           <ResumeForm onSubmit={handleGenerateResume} isLoading={isLoading} />
         </div>
-        <div id="preview-section" className={styles.previewSection}>
+        
+        <div id="preview-section" className={`order-2 ${hasResume ? 'lg:sticky lg:top-24 block' : 'hidden'}`}>
           <ResumePreview
-            resumeMarkdown={resumeMarkdown}
+            resumeMarkdown={resumeMarkdown || ''}
             onResumeChange={setResumeMarkdown}
             onReset={() => setResumeMarkdown(null)}
             jobDescription={lastJD.current}

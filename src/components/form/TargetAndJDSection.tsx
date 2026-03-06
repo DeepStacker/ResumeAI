@@ -1,54 +1,49 @@
-import React, { useState } from 'react';
-import { Target, ClipboardList, Code, Loader2, Sparkles, Plus, X } from 'lucide-react';
+import React from 'react';
+import { Target, ClipboardList } from 'lucide-react';
 import { useResumeStore } from '@/store/useResumeStore';
 import { DebouncedInput, DebouncedTextarea } from '@/components/DebouncedInput';
-import { callAI } from '@/lib/ai';
 
-export function TargetAndSkillsSection({
-  loadingSuggestion,
-  fetchSuggestion,
-  handleAddChip,
-  onSkillsChange,
-  SuggestionBubble,
-  skillInput,
-  setSkillInput
-}: any) {
-  const { data, updateField, removeChip } = useResumeStore();
+interface Props {
+  SuggestionBubble: React.FC<{ field: string }>;
+  loadingSuggestion?: string | null;
+  fetchSuggestion?: any;
+  handleAddChip?: any;
+  onSkillsChange?: any;
+  skillInput?: string;
+  setSkillInput?: any;
+}
 
-  const handleSuggestTargetRoles = async () => {
-    // Passed down or handled locally? For now expect it in parent or implement here
-    // In this refactor, it's easier to pass these complex handlers from ResumeForm
-    // or port them here if they only depend on store.
-  };
+export function TargetAndSkillsSection({ SuggestionBubble }: Props) {
+  const { data, updateField } = useResumeStore();
 
   return (
     <>
-      <div className="input-group">
-        <div className="label-row">
-          <label className="input-label"><Target size={14} /> Target Job Title <span className="required">*</span></label>
+      <div className="grid gap-2">
+        <div className="flex items-center justify-between gap-2">
+          <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-2"><Target size={14} /> Target Job Title <span className="text-destructive font-normal">*</span></label>
         </div>
         <DebouncedInput
           type="text"
           value={data.targetRole}
           onChangeValue={(val) => updateField('targetRole', val)}
-          className="input-field"
+          className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
           placeholder="Senior Software Engineer"
           required
         />
         <SuggestionBubble field="targetRoleIdeation" />
-        <p className="field-hint">AI uses this to tailor content and ATS keywords.</p>
+        <p className="text-[0.85rem] text-muted-foreground italic">AI uses this to tailor content and ATS keywords.</p>
       </div>
 
-      <div className="input-group">
-        <label className="input-label"><ClipboardList size={14} /> Job Description <span className="badge-optional">optional</span></label>
+      <div className="grid gap-2">
+        <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-2"><ClipboardList size={14} /> Job Description <span className="text-[0.65rem] font-medium px-2 py-0.5 bg-muted rounded-full text-muted-foreground">optional</span></label>
         <DebouncedTextarea
           value={data.jobDescription || ''}
           onChangeValue={(val) => updateField('jobDescription', val)}
-          className="input-field jd-textarea"
+          className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 jd-textarea"
           rows={10}
           placeholder="Paste the full job description here for maximum ATS optimization..."
         />
-        <p className="field-hint">Pasting a JD lets AI extract keywords and score your resume against the role.</p>
+        <p className="text-[0.85rem] text-muted-foreground italic">Pasting a JD lets AI extract keywords and score your resume against the role.</p>
       </div>
     </>
   );

@@ -96,8 +96,8 @@ export async function callAI(options: {
                         ...options,
                     });
                     if (result) return { ...result, provider: provider.name };
-                } catch (err: any) {
-                    errors.push(`${provider.name}/${model}: ${err.message?.substring(0, 60)}`);
+                } catch (err: unknown) {
+                    errors.push(`${provider.name}/${model}: ${(err as Error).message?.substring(0, 60)}`);
                 }
             }
         }
@@ -190,8 +190,8 @@ export async function callAIStream(options: {
                         ...options,
                     });
                     if (stream) return stream;
-                } catch (err: any) {
-                    errors.push(`${provider.name}/${model}: ${err.message?.substring(0, 60)}`);
+                } catch (err: unknown) {
+                    errors.push(`${provider.name}/${model}: ${(err as Error).message?.substring(0, 60)}`);
                 }
             }
         }
@@ -269,7 +269,7 @@ function parseOpenAIStream(body: ReadableStream<Uint8Array>): ReadableStream {
                             if (text) {
                                 controller.enqueue(encoder.encode(text));
                             }
-                        } catch (e) {
+                        } catch {
                             // ignore parse errors
                         }
                     }

@@ -27,7 +27,7 @@ export default function UserMenu() {
     );
   }
 
-  const credits = (session.user as any).credits ?? 0;
+  const credits = (session.user as { credits?: number }).credits ?? 0;
 
   return (
     <div className="user-menu-container" ref={menuRef}>

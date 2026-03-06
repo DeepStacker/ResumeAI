@@ -16,6 +16,7 @@ interface AtsScoreItem {
   matched: string[];
   missing: string[];
   suggestions: string[];
+  fullResult?: any;
   createdAt: string;
   resume: { id: string; title: string };
 }
@@ -293,7 +294,7 @@ export default function AtsTrackerPage() {
             <div
               key={score.id}
               className="glass-panel"
-              onClick={() => { setViewingScore(score); setDetailedResult(null); }}
+              onClick={() => { setViewingScore(score); setDetailedResult(score.fullResult || null); }}
               style={{ padding: '1.25rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', transition: 'border-color 0.2s', border: '1px solid transparent' }}
               onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--primary)'}
               onMouseLeave={e => e.currentTarget.style.borderColor = 'transparent'}
@@ -481,6 +482,57 @@ export default function AtsTrackerPage() {
             </div>
 
             <div style={{ maxHeight: '55vh', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+
+              {/* Fallback for old history items without fullResult */}
+              {!detailedResult && (
+                <>
+                  {viewingScore.matched && viewingScore.matched.length > 0 && (
+                    <div>
+                      <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', marginBottom: '0.5rem', color: '#10b981', fontSize: '0.9rem' }}>
+                        <CheckCircle2 size={16} /> Matched Keywords ({viewingScore.matched.length})
+                      </h4>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
+                        {viewingScore.matched.map((k: string, i: number) => (
+                          <span key={i} style={{ fontSize: '0.75rem', padding: '0.2rem 0.5rem', borderRadius: '4px', background: 'rgba(16, 185, 129, 0.1)', color: '#10b981', border: '1px solid rgba(16, 185, 129, 0.2)' }}>{k}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {viewingScore.missing && viewingScore.missing.length > 0 && (
+                    <div>
+                      <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', marginBottom: '0.5rem', color: '#ef4444', fontSize: '0.9rem' }}>
+                        <AlertCircle size={16} /> Missing Keywords ({viewingScore.missing.length})
+                      </h4>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
+                        {viewingScore.missing.map((k: string, i: number) => (
+                          <span key={i} style={{ fontSize: '0.75rem', padding: '0.2rem 0.5rem', borderRadius: '4px', background: 'rgba(239, 68, 68, 0.08)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.15)' }}>{k}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {viewingScore.suggestions && viewingScore.suggestions.length > 0 && (
+                    <div>
+                      <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', marginBottom: '0.5rem', color: '#f59e0b', fontSize: '0.9rem' }}>
+                        <Lightbulb size={16} /> Suggestions
+                      </h4>
+                      <ul style={{ paddingLeft: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                        {viewingScore.suggestions.map((s: string, i: number) => (
+                          <li key={i} style={{ color: 'var(--foreground)', fontSize: '0.88rem', lineHeight: 1.5 }}>{s}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {viewingScore.jdSnippet && (
+                    <div>
+                      <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', marginBottom: '0.5rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                        <FileText size={14} /> Job Description Used
+                      </h4>
+                      <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', lineHeight: 1.5, fontStyle: 'italic' }}>{viewingScore.jdSnippet}</p>
+                    </div>
+                  )}
+                </>
+              )}
+
               {/* Overall Verdict */}
               {detailedResult?.overallVerdict && (
                 <div style={{ padding: '1rem', background: 'rgba(139, 92, 246, 0.06)', borderRadius: 'var(--radius-md)', border: '1px solid rgba(139, 92, 246, 0.15)' }}>

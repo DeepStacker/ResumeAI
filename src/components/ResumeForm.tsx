@@ -555,29 +555,29 @@ export default function ResumeForm({ onSubmit, isLoading }: ResumeFormProps) {
   if (!mounted) return null;
 
   return (
-    <div className="form-panel glass-panel animate-fade-in">
+    <div className="p-6 bg-card text-card-foreground shadow-lg rounded-xl border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border shadow-sm rounded-xl animate-fade-in">
       {step > 0 && (
-        <div className="progress-bar-container">
-          <div className="progress-bar-fill" style={{ width: `${progress}%` }} />
-          <span className="progress-bar-label">{progress}%</span>
+        <div className="relative h-1.5 w-full bg-muted rounded-full mb-6 overflow-hidden">
+          <div className="h-full bg-gradient-to-r from-primary to-accent transition-all duration-500 rounded-full" style={{ width: `${progress}%` }} />
+          <span className="absolute right-0 -top-5 text-xs font-bold text-primary opacity-80">{progress}%</span>
         </div>
       )}
 
-      <div className="stepper">
+      <div className="flex gap-1 mb-8 overflow-x-auto pb-1 hide-scrollbar">
         {STEPS.map((s, i) => {
           const Icon = s.icon;
           return (
-            <button key={s.id} className={`stepper-item ${step === i ? 'active' : ''} ${step > i ? 'done' : ''}`} onClick={() => setStep(i)} type="button">
-              <div className="stepper-icon">{step > i ? <Check size={12} /> : <Icon size={12} />}</div>
-              <span className="stepper-label">{s.title}</span>
+            <button key={s.id} className={`flex flex-col flex-1 min-w-[56px] items-center gap-1.5 p-2 rounded-md transition-all cursor-pointer hover:bg-muted/50 ${step === i ? "bg-primary/10" : ""}`} onClick={() => setStep(i)} type="button">
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center border transition-all shadow-sm ${step === i ? "bg-primary text-primary-foreground border-primary shadow-md" : step > i ? "bg-emerald-500 text-white border-emerald-500" : "bg-background text-muted-foreground border-input"}`}>{step > i ? <Check size={12} /> : <Icon size={12} />}</div>
+              <span className={`text-[0.7rem] font-medium whitespace-nowrap transition-colors ${step === i ? "text-primary font-bold" : "text-muted-foreground"}`}>{s.title}</span>
             </button>
           );
         })}
       </div>
 
-      <div className="step-header">
-        <h2 className="step-title">{React.createElement(STEPS[step].icon, { size: 20, color: 'var(--primary)' })} {STEPS[step].title}</h2>
-        <p className="step-desc">{STEPS[step].desc}</p>
+      <div className="mb-6 mt-2">
+        <h2 className="flex items-center gap-2 text-2xl font-bold tracking-tight mb-2">{React.createElement(STEPS[step].icon, { size: 20, color: 'var(--primary)' })} {STEPS[step].title}</h2>
+        <p className="text-sm text-muted-foreground">{STEPS[step].desc}</p>
       </div>
 
       <form onSubmit={handleSubmit}>
@@ -585,19 +585,19 @@ export default function ResumeForm({ onSubmit, isLoading }: ResumeFormProps) {
         {/* === STEP 0: Upload === */}
         {step === 0 && (
           <div className="animate-fade-in">
-            <div className="upload-zone" onClick={() => fileRef.current?.click()}
+            <div className="border-2 border-dashed border-border rounded-xl p-8 text-center cursor-pointer transition-colors bg-muted/30 hover:bg-muted/50 hover:border-primary flex flex-col items-center gap-3" onClick={() => fileRef.current?.click()}
               onDragOver={e => { e.preventDefault(); e.currentTarget.classList.add('drag-over'); }}
               onDragLeave={e => e.currentTarget.classList.remove('drag-over')}
               onDrop={handleDrop}>
-              {isUploading ? <Loader2 size={36} className="spin-icon" color="var(--primary)" /> : <div className="upload-zone-icon-wrap"><Upload size={28} /></div>}
-              <p className="upload-zone-title">{isUploading ? 'Parsing...' : 'Drop your resume here'}</p>
-              <p className="upload-zone-sub">PDF, DOCX, TXT, or MD</p>
-              {uploadedFile && !isUploading && <div className="upload-file-badge"><FileText size={12} /> {uploadedFile}</div>}
+              {isUploading ? <Loader2 size={36} className="spin-icon" color="var(--primary)" /> : <div className="border-2 border-dashed border-border rounded-xl p-8 text-center cursor-pointer transition-colors bg-muted/30 hover:bg-muted/50 hover:border-primary flex flex-col items-center gap-3-icon-wrap"><Upload size={28} /></div>}
+              <p className="border-2 border-dashed border-border rounded-xl p-8 text-center cursor-pointer transition-colors bg-muted/30 hover:bg-muted/50 hover:border-primary flex flex-col items-center gap-3-title">{isUploading ? 'Parsing...' : 'Drop your resume here'}</p>
+              <p className="border-2 border-dashed border-border rounded-xl p-8 text-center cursor-pointer transition-colors bg-muted/30 hover:bg-muted/50 hover:border-primary flex flex-col items-center gap-3-sub">PDF, DOCX, TXT, or MD</p>
+              {uploadedFile && !isUploading && <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 text-sm font-medium mt-2"><FileText size={12} /> {uploadedFile}</div>}
               <input ref={fileRef} type="file" accept=".txt,.md,.pdf,.docx" onChange={e => { const f = e.target.files?.[0]; if (f) processFile(f); }} style={{ display: 'none' }} />
             </div>
             {uploadMsg && <div className={`upload-message animate-fade-in ${uploadMsg.startsWith('✅') ? 'success' : 'error'}`}>{uploadMsg}</div>}
-            <div className="divider-or"><span>OR</span></div>
-            <button type="button" onClick={nextStep} className="btn-primary full-width"><FileText size={16} /> Start from Scratch</button>
+            <div className="flex items-center gap-4 my-6 text-sm text-muted-foreground uppercase tracking-widest before:flex-1 before:h-px before:bg-border after:flex-1 after:h-px after:bg-border"><span>OR</span></div>
+            <button type="button" onClick={nextStep} className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 full-width"><FileText size={16} /> Start from Scratch</button>
           </div>
         )}
 
@@ -606,7 +606,7 @@ export default function ResumeForm({ onSubmit, isLoading }: ResumeFormProps) {
 
         {/* === STEP 2: Target & JD === */}
         {step === 2 && (
-          <div className="step-content animate-fade-in">
+          <div className="flex flex-col gap-6 animate-in fade-in-50 duration-500 animate-fade-in">
             <TargetAndSkillsSection
               loadingSuggestion={loadingSuggestion}
               fetchSuggestion={fetchSuggestion}
@@ -621,30 +621,30 @@ export default function ResumeForm({ onSubmit, isLoading }: ResumeFormProps) {
 
         {/* === STEP 3: Skills === */}
         {step === 3 && (
-          <div className="step-content animate-fade-in">
-            <div className="input-group">
-              <div className="label-row">
-                <label className="input-label"><Code size={14} /> Skills {loadingSuggestion === 'skills' && <Loader2 size={13} className="spin-icon inline-loader" />}</label>
-                <button type="button" onClick={() => fetchSuggestion('skills', data.targetRole || data.skills.join(', ') || 'general')} disabled={loadingSuggestion === 'skills'} className="ai-autofill-btn" style={{ padding: '0.2rem 0.5rem', fontSize: '0.75rem' }}>
+          <div className="flex flex-col gap-6 animate-in fade-in-50 duration-500 animate-fade-in">
+            <div className="grid gap-2">
+              <div className="flex items-center justify-between gap-2">
+                <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-2"><Code size={14} /> Skills {loadingSuggestion === 'skills' && <Loader2 size={13} className="spin-icon inline-loader" />}</label>
+                <button type="button" onClick={() => fetchSuggestion('skills', data.targetRole || data.skills.join(', ') || 'general')} disabled={loadingSuggestion === 'skills'} className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-accent text-accent hover:bg-accent/10 h-8 px-3 gap-1.5" style={{ padding: '0.2rem 0.5rem', fontSize: '0.75rem' }}>
                   {loadingSuggestion === 'skills' ? <><Loader2 size={12} className="spin-icon" /> Suggesting...</> : <><Sparkles size={12} /> AI Suggest Skills</>}
                 </button>
               </div>
-              <div className="skill-input-row">
+              <div className="flex items-center gap-2">
                 <DebouncedInput type="text" value={skillInput} onChangeValue={val => setSkillInput(val)}
                   onKeyDown={e => { if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); handleAddChip('skills', skillInput, setSkillInput); onSkillsChange(); } }}
-                  className="input-field" placeholder="Type a skill and press Enter" delay={10} />
-                <button type="button" onClick={() => { handleAddChip('skills', skillInput, setSkillInput); onSkillsChange(); }} className="btn-icon"><Plus size={16} /></button>
+                  className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50" placeholder="Type a skill and press Enter" delay={10} />
+                <button type="button" onClick={() => { handleAddChip('skills', skillInput, setSkillInput); onSkillsChange(); }} className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-10 w-10 shrink-0"><Plus size={16} /></button>
               </div>
               {data.skills.length > 0 && (
                 <div className="skill-chips">
                   {data.skills.map((s, i) => (
-                    <span key={i} className="skill-chip">{s}<button type="button" onClick={() => store.removeChip('skills', i)} className="chip-remove"><X size={11} /></button></span>
+                    <span key={i} className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-primary/10 text-primary hover:bg-primary/20">{s}<button type="button" onClick={() => store.removeChip('skills', i)} className="opacity-50 hover:opacity-100 transition-opacity focus:outline-none"><X size={11} /></button></span>
                   ))}
                 </div>
               )}
               <SuggestionBubble field="skills" />
               {data.jobDescription && (
-                <button type="button" onClick={() => fetchSuggestion('skills', `Extract the most important technical skills and keywords from this JD: ${data.jobDescription.substring(0, 500)}`)} disabled={loadingSuggestion === 'skills'} className="ai-autofill-btn" style={{ marginTop: '0.5rem', borderColor: 'var(--secondary)', color: 'var(--secondary)' }}>
+                <button type="button" onClick={() => fetchSuggestion('skills', `Extract the most important technical skills and keywords from this JD: ${data.jobDescription.substring(0, 500)}`)} disabled={loadingSuggestion === 'skills'} className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-accent text-accent hover:bg-accent/10 h-8 px-3 gap-1.5" style={{ marginTop: '0.5rem', borderColor: 'var(--secondary)', color: 'var(--secondary)' }}>
                   <Target size={13} /> Extract Skills from JD
                 </button>
               )}
@@ -674,60 +674,186 @@ export default function ResumeForm({ onSubmit, isLoading }: ResumeFormProps) {
 
         {/* === STEP 7: Review & Generate === */}
         {step === 7 && (
-          <div className="step-content animate-fade-in">
+          <div className="flex flex-col gap-6 animate-in fade-in-50 duration-500 animate-fade-in">
             {/* Summary */}
-            <div className="input-group">
-              <div className="label-row">
-                <label className="input-label"><Sparkles size={14} /> Professional Summary</label>
-                <button type="button" onClick={generateSummary} disabled={summaryLoading} className="ai-autofill-btn">
+            <div className="grid gap-2">
+              <div className="flex items-center justify-between gap-2">
+                <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-2"><Sparkles size={14} /> Professional Summary</label>
+                <button type="button" onClick={generateSummary} disabled={summaryLoading} className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-accent text-accent hover:bg-accent/10 h-8 px-3 gap-1.5">
                   {summaryLoading ? <><Loader2 size={13} className="spin-icon" /> Generating...</> : <><Sparkles size={13} /> AI Auto-fill</>}
                 </button>
               </div>
-              <textarea value={data.summary} onChange={e => store.updateField('summary', e.target.value)} className="input-field" rows={3} placeholder="A results-driven software engineer with 5+ years..." />
-              <p className="field-hint">Click &quot;AI Auto-fill&quot; to generate from your data, or write your own.</p>
+              <textarea value={data.summary} onChange={e => store.updateField('summary', e.target.value)} className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50" rows={3} placeholder="A results-driven software engineer with 5+ years..." />
+              <p className="text-[0.85rem] text-muted-foreground italic">Click &quot;AI Auto-fill&quot; to generate from your data, or write your own.</p>
+            </div>
+
+            {/* Template Selector */}
+            <div className="grid gap-2">
+              <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-2"><FileText size={14} /> Resume Template</label>
+              <p className="text-[0.85rem] text-muted-foreground italic" style={{ marginBottom: '0.6rem' }}>Choose a layout for your resume. The preview updates instantly.</p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem' }}>
+                {([
+                  {
+                    id: 'professional' as const,
+                    name: 'Professional',
+                    desc: 'Classic ATS-friendly layout',
+                    color: '#334155',
+                    preview: (
+                      <div style={{ padding: '6px', display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                        <div style={{ height: '6px', width: '60%', margin: '0 auto', background: '#334155', borderRadius: '1px' }} />
+                        <div style={{ height: '2px', width: '80%', margin: '0 auto', background: '#94a3b8' }} />
+                        <div style={{ height: '1px', background: '#cbd5e1', margin: '3px 0' }} />
+                        <div style={{ height: '3px', width: '40%', background: '#334155', borderRadius: '1px' }} />
+                        <div style={{ height: '2px', width: '90%', background: '#e2e8f0' }} />
+                        <div style={{ height: '2px', width: '85%', background: '#e2e8f0' }} />
+                        <div style={{ height: '2px', width: '88%', background: '#e2e8f0' }} />
+                        <div style={{ height: '1px', background: '#cbd5e1', margin: '2px 0' }} />
+                        <div style={{ height: '3px', width: '35%', background: '#334155', borderRadius: '1px' }} />
+                        <div style={{ height: '2px', width: '92%', background: '#e2e8f0' }} />
+                        <div style={{ height: '2px', width: '80%', background: '#e2e8f0' }} />
+                      </div>
+                    ),
+                  },
+                  {
+                    id: 'modern' as const,
+                    name: 'Modern',
+                    desc: 'Two-column with accent colors',
+                    color: '#7c3aed',
+                    preview: (
+                      <div style={{ padding: '6px', display: 'flex', gap: '4px' }}>
+                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                          <div style={{ height: '6px', width: '80%', background: '#7c3aed', borderRadius: '1px' }} />
+                          <div style={{ height: '2px', width: '60%', background: '#94a3b8' }} />
+                          <div style={{ height: '2px', background: '#7c3aed', margin: '2px 0', opacity: 0.3 }} />
+                          <div style={{ display: 'flex', gap: '3px', alignItems: 'flex-start' }}>
+                            <div style={{ width: '2px', height: '20px', background: '#e2e8f0', flexShrink: 0, marginTop: '1px' }} />
+                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                              <div style={{ height: '2px', width: '70%', background: '#334155' }} />
+                              <div style={{ height: '2px', width: '90%', background: '#e2e8f0' }} />
+                              <div style={{ height: '2px', width: '80%', background: '#e2e8f0' }} />
+                            </div>
+                          </div>
+                        </div>
+                        <div style={{ width: '30%', display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                          <div style={{ height: '3px', width: '80%', background: '#7c3aed', borderRadius: '1px' }} />
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '2px' }}>
+                            <div style={{ height: '4px', width: '45%', background: '#f1f5f9', borderRadius: '1px' }} />
+                            <div style={{ height: '4px', width: '35%', background: '#f1f5f9', borderRadius: '1px' }} />
+                            <div style={{ height: '4px', width: '50%', background: '#f1f5f9', borderRadius: '1px' }} />
+                          </div>
+                        </div>
+                      </div>
+                    ),
+                  },
+                  {
+                    id: 'minimal' as const,
+                    name: 'Minimal',
+                    desc: 'Clean monospace, no-frills',
+                    color: '#0f172a',
+                    preview: (
+                      <div style={{ padding: '6px', display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                        <div style={{ height: '5px', width: '50%', background: '#0f172a', borderRadius: '0' }} />
+                        <div style={{ height: '2px', background: '#0f172a', marginBottom: '2px' }} />
+                        <div style={{ height: '2px', width: '70%', background: '#94a3b8' }} />
+                        <div style={{ height: '8px', width: '30%', background: '#0f172a', marginTop: '3px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <span style={{ fontSize: '4px', color: 'white', fontWeight: 700 }}>SKILLS</span>
+                        </div>
+                        <div style={{ height: '2px', width: '85%', background: '#e2e8f0' }} />
+                        <div style={{ height: '8px', width: '35%', background: '#0f172a', marginTop: '2px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <span style={{ fontSize: '4px', color: 'white', fontWeight: 700 }}>EXP</span>
+                        </div>
+                        <div style={{ height: '2px', width: '90%', background: '#e2e8f0' }} />
+                        <div style={{ height: '2px', width: '75%', background: '#e2e8f0' }} />
+                      </div>
+                    ),
+                  },
+                ] as const).map(tmpl => (
+                  <button
+                    key={tmpl.id}
+                    type="button"
+                    onClick={() => store.updateField('template', tmpl.id)}
+                    style={{
+                      position: 'relative',
+                      border: data.template === tmpl.id ? `2px solid ${tmpl.color}` : '2px solid var(--surface-border)',
+                      borderRadius: 'var(--radius-md)',
+                      background: data.template === tmpl.id ? `${tmpl.color}08` : 'var(--surface)',
+                      padding: '0',
+                      cursor: 'pointer',
+                      overflow: 'hidden',
+                      transition: 'all 0.2s ease',
+                      textAlign: 'left',
+                    }}
+                  >
+                    {/* Mini preview illustration */}
+                    <div style={{
+                      background: 'white',
+                      borderBottom: '1px solid var(--surface-border)',
+                      minHeight: '65px',
+                    }}>
+                      {tmpl.preview}
+                    </div>
+                    {/* Label */}
+                    <div style={{ padding: '0.5rem 0.6rem' }}>
+                      <p style={{
+                        fontSize: '0.82rem',
+                        fontWeight: 700,
+                        color: data.template === tmpl.id ? tmpl.color : 'var(--foreground)',
+                        marginBottom: '0.1rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.3rem',
+                      }}>
+                        {data.template === tmpl.id && <Check size={13} style={{ color: tmpl.color }} />}
+                        {tmpl.name}
+                      </p>
+                      <p style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>{tmpl.desc}</p>
+                    </div>
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* Certifications */}
-            <div className="input-group">
-              <label className="input-label"><Award size={14} /> Certifications</label>
-              <div className="skill-input-row">
+            <div className="grid gap-2">
+              <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-2"><Award size={14} /> Certifications</label>
+              <div className="flex items-center gap-2">
                 <input type="text" value={certInput} onChange={e => setCertInput(e.target.value)}
                   onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleAddChip('certifications', certInput, setCertInput); } }}
-                  className="input-field" placeholder="AWS Certified Solutions Architect" />
-                <button type="button" onClick={() => handleAddChip('certifications', certInput, setCertInput)} className="btn-icon"><Plus size={16} /></button>
+                  className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50" placeholder="AWS Certified Solutions Architect" />
+                <button type="button" onClick={() => handleAddChip('certifications', certInput, setCertInput)} className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-10 w-10 shrink-0"><Plus size={16} /></button>
               </div>
               {data.certifications.length > 0 && (
                 <div className="skill-chips">{data.certifications.map((c, i) => (
-                  <span key={i} className="skill-chip cert-chip">{c}<button type="button" onClick={() => store.removeChip('certifications', i)} className="chip-remove"><X size={11} /></button></span>
+                  <span key={i} className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-primary/10 text-primary hover:bg-primary/20 inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-accent/10 text-accent hover:bg-accent/20">{c}<button type="button" onClick={() => store.removeChip('certifications', i)} className="opacity-50 hover:opacity-100 transition-opacity focus:outline-none"><X size={11} /></button></span>
                 ))}</div>
               )}
             </div>
 
             {/* Languages */}
-            <div className="input-group">
-              <label className="input-label"><Languages size={14} /> Languages</label>
-              <div className="skill-input-row">
+            <div className="grid gap-2">
+              <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-2"><Languages size={14} /> Languages</label>
+              <div className="flex items-center gap-2">
                 <input type="text" value={langInput} onChange={e => setLangInput(e.target.value)}
                   onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleAddChip('languages', langInput, setLangInput); } }}
-                  className="input-field" placeholder="English (Native), Hindi (Fluent)" />
-                <button type="button" onClick={() => handleAddChip('languages', langInput, setLangInput)} className="btn-icon"><Plus size={16} /></button>
+                  className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50" placeholder="English (Native), Hindi (Fluent)" />
+                <button type="button" onClick={() => handleAddChip('languages', langInput, setLangInput)} className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-10 w-10 shrink-0"><Plus size={16} /></button>
               </div>
               {data.languages.length > 0 && (
                 <div className="skill-chips">{data.languages.map((l, i) => (
-                  <span key={i} className="skill-chip lang-chip">{l}<button type="button" onClick={() => store.removeChip('languages', i)} className="chip-remove"><X size={11} /></button></span>
+                  <span key={i} className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-primary/10 text-primary hover:bg-primary/20 inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-secondary/10 text-secondary hover:bg-secondary/20">{l}<button type="button" onClick={() => store.removeChip('languages', i)} className="opacity-50 hover:opacity-100 transition-opacity focus:outline-none"><X size={11} /></button></span>
                 ))}</div>
               )}
             </div>
 
             {/* Resume Readiness Check */}
-            <div className="input-group">
-              <div className="label-row">
-                <label className="input-label"><BarChart3 size={14} /> Resume Readiness Check</label>
-                <button type="button" onClick={handleReviewReadiness} disabled={reviewLoading} className="ai-autofill-btn">
+            <div className="grid gap-2">
+              <div className="flex items-center justify-between gap-2">
+                <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-2"><BarChart3 size={14} /> Resume Readiness Check</label>
+                <button type="button" onClick={handleReviewReadiness} disabled={reviewLoading} className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-accent text-accent hover:bg-accent/10 h-8 px-3 gap-1.5">
                   {reviewLoading ? <><Loader2 size={13} className="spin-icon" /> Analyzing...</> : <><Shield size={13} /> Check Readiness</>}
                 </button>
               </div>
-              <p className="field-hint">Free ATS analysis with detailed breakdown. No credits charged.</p>
+              <p className="text-[0.85rem] text-muted-foreground italic">Free ATS analysis with detailed breakdown. No credits charged.</p>
 
               {reviewResult && (
                 <div className="animate-fade-in" style={{ marginTop: '0.75rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--surface-border)', overflow: 'hidden' }}>
@@ -750,7 +876,7 @@ export default function ResumeForm({ onSubmit, isLoading }: ResumeFormProps) {
                       </p>
                     </div>
                     {reviewResult.canAutoFix && (
-                      <button type="button" onClick={handleApplyAllFixes} disabled={!!fixingType} className="btn-primary" style={{ fontSize: '0.78rem', padding: '0.5rem 0.85rem', whiteSpace: 'nowrap' }}>
+                      <button type="button" onClick={handleApplyAllFixes} disabled={!!fixingType} className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2" style={{ fontSize: '0.78rem', padding: '0.5rem 0.85rem', whiteSpace: 'nowrap' }}>
                         {fixingType ? <><Loader2 size={13} className="spin-icon" /> Fixing...</> : <><Zap size={13} /> Apply All Fixes</>}
                       </button>
                     )}
@@ -863,8 +989,8 @@ export default function ResumeForm({ onSubmit, isLoading }: ResumeFormProps) {
             </div>
 
             {/* Template Selector */}
-            <div className="input-group">
-              <label className="input-label">Resume Template</label>
+            <div className="grid gap-2">
+              <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-2">Resume Template</label>
               <div className="template-grid">
                 {TEMPLATES.map(t => (
                   <button key={t.id} type="button" className={`template-card ${data.template === t.id ? 'active' : ''}`} onClick={() => store.updateField('template', t.id)}>
@@ -881,7 +1007,7 @@ export default function ResumeForm({ onSubmit, isLoading }: ResumeFormProps) {
     
 
         <div className="step-nav" style={{ alignItems: 'center' }}>
-          {step > 0 && <button type="button" onClick={prevStep} className="btn-secondary"><ChevronLeft size={16} /> Back</button>}
+          {step > 0 && <button type="button" onClick={prevStep} className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2"><ChevronLeft size={16} /> Back</button>}
           
           <div style={{ flex: 1 }} />
           
@@ -889,24 +1015,24 @@ export default function ResumeForm({ onSubmit, isLoading }: ResumeFormProps) {
             <button 
               type="button" 
               onClick={() => setShowConfirmReset(true)}
-              className="btn-secondary" 
+              className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2" 
               title="Clear all text and start over"
               style={{ color: 'var(--error)', borderColor: 'rgba(239,68,68,0.3)', marginRight: '1rem', padding: '0.6rem 0.75rem' }}
             >
               <RefreshCcw size={16} /> <span className="hide-on-mobile">Start Fresh</span>
             </button>
           )}
-          {step > 0 && !isLastStep && <button type="button" onClick={nextStep} disabled={!canProceed(step)} className="btn-primary">Next <ChevronRight size={16} /></button>}
+          {step > 0 && !isLastStep && <button type="button" onClick={nextStep} disabled={!canProceed(step)} className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2">Next <ChevronRight size={16} /></button>}
           
           {isLastStep && (
             <div style={{ display: 'flex', gap: '0.75rem' }}>
-              <button type="button" onClick={handleGenerateCoverLetter} disabled={coverLetterLoading || !canProceed(1)} className="btn-secondary generate-btn" style={{ borderColor: 'var(--accent)', color: 'var(--accent)' }}>
+              <button type="button" onClick={handleGenerateCoverLetter} disabled={coverLetterLoading || !canProceed(1)} className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2 generate-btn" style={{ borderColor: 'var(--accent)', color: 'var(--accent)' }}>
                 {coverLetterLoading ? <><Loader2 size={16} className="spin-icon" /> Generating...</> : <><Sparkles size={16} /> Cover Letter</>}
               </button>
-              <button type="button" onClick={handleSaveDraft} disabled={isSavingDraft || !canProceed(1) || !canProceed(2)} className="btn-secondary generate-btn" style={{ color: 'var(--primary)', borderColor: 'var(--primary)' }}>
+              <button type="button" onClick={handleSaveDraft} disabled={isSavingDraft || !canProceed(1) || !canProceed(2)} className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2 generate-btn" style={{ color: 'var(--primary)', borderColor: 'var(--primary)' }}>
                 {isSavingDraft ? <><Loader2 size={16} className="spin-icon" /> Saving...</> : <><Check size={16} /> Save Draft</>}
               </button>
-              <button type="submit" disabled={isLoading || !canProceed(1) || !canProceed(2)} className="btn-primary generate-btn">
+              <button type="submit" disabled={isLoading || !canProceed(1) || !canProceed(2)} className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 generate-btn">
                 {isLoading ? <><Loader2 size={16} className="spin-icon" /> Generating...</> : <><Send size={16} /> Generate Resume</>}
               </button>
             </div>
@@ -914,12 +1040,12 @@ export default function ResumeForm({ onSubmit, isLoading }: ResumeFormProps) {
         </div>
 
         {coverLetter && (
-          <div className="input-group animate-fade-in" style={{ marginTop: '1.5rem', padding: '1.5rem', background: 'rgba(139, 92, 246, 0.05)', borderRadius: 'var(--radius-lg)', border: '1px solid rgba(139, 92, 246, 0.2)' }}>
+          <div className="grid gap-2 animate-fade-in" style={{ marginTop: '1.5rem', padding: '1.5rem', background: 'rgba(139, 92, 246, 0.05)', borderRadius: 'var(--radius-lg)', border: '1px solid rgba(139, 92, 246, 0.2)' }}>
             <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', color: 'var(--accent)', fontSize: '1.1rem' }}>
               <Sparkles size={18} /> Generated Cover Letter
             </h3>
-            <textarea value={coverLetter} onChange={(e) => setCoverLetter(e.target.value)} className="input-field jd-textarea" style={{ minHeight: '300px', cursor: 'text' }} />
-            <p className="field-hint" style={{ marginTop: '0.5rem' }}>You can directly edit this cover letter before copying.</p>
+            <textarea value={coverLetter} onChange={(e) => setCoverLetter(e.target.value)} className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 jd-textarea" style={{ minHeight: '300px', cursor: 'text' }} />
+            <p className="text-[0.85rem] text-muted-foreground italic" style={{ marginTop: '0.5rem' }}>You can directly edit this cover letter before copying.</p>
           </div>
         )}
       </form>
@@ -933,7 +1059,7 @@ export default function ResumeForm({ onSubmit, isLoading }: ResumeFormProps) {
               Are you sure you want to clear all form data and start a new resume from scratch? This cannot be undone.
             </p>
             <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
-              <button type="button" onClick={() => setShowConfirmReset(false)} className="btn-secondary">
+              <button type="button" onClick={() => setShowConfirmReset(false)} className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2">
                 Cancel
               </button>
               <button 
@@ -943,7 +1069,7 @@ export default function ResumeForm({ onSubmit, isLoading }: ResumeFormProps) {
                   setCoverLetter(null);
                   setShowConfirmReset(false);
                 }} 
-                className="btn-primary"
+                className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2"
                 style={{ background: 'var(--error)', borderColor: 'var(--error)' }}
               >
                 Yes, Clear Everything

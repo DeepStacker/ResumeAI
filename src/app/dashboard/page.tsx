@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { FileText, Clock, Trash2, Coins, ArrowRight, Loader2, Plus, X, Eye, Share2, Sparkles, Copy, Check } from 'lucide-react';
 import ResumePreview from '@/components/ResumePreview';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface ResumeItem {
   id: string;
@@ -114,13 +116,10 @@ export default function DashboardPage() {
         const resume = responseData.resume;
         
         if (resume?.data && typeof resume.data === 'object' && resume.data.personal) {
-          // New JSON format — pass structured data for template rendering
           setViewingResume({ type: 'json', data: resume.data, markdown: resume.markdown });
         } else if (resume?.markdown && resume.markdown !== '# Generated') {
-          // Old markdown format
           setViewingResume({ type: 'markdown', markdown: resume.markdown });
         } else if (resume?.data) {
-          // JSON data but might be a different shape
           setViewingResume({ type: 'json', data: resume.data, markdown: resume.markdown });
         } else {
           alert('This resume is empty or was saved incorrectly.');
@@ -147,8 +146,8 @@ export default function DashboardPage() {
       const data = await res.json();
       if (res.ok && data.coverLetter) {
         setClResult(data.coverLetter);
-        setClResumeId(null); // close JD modal
-        fetchData(); // refresh credits
+        setClResumeId(null); 
+        fetchData(); 
       } else {
         alert(data.error || 'Failed to generate cover letter.');
       }
@@ -161,127 +160,134 @@ export default function DashboardPage() {
 
   if (status === 'loading' || loading) {
     return (
-      <div className="dashboard-page">
-        <div className="loading-screen">
-          <Loader2 size={28} className="spin-icon" style={{ color: 'var(--primary)' }} />
-        </div>
+      <div className="flex min-h-[50vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
 
   return (
-    <div className="dashboard-page">
-      <div className="dashboard-header">
-        <h1>My Resumes</h1>
-        <p>Manage your generated resumes and billing balance</p>
+    <div className="container mx-auto px-4 py-8 md:py-12 max-w-6xl">
+      <div className="mb-10">
+        <h1 className="text-3xl font-bold tracking-tight mb-2">My Resumes</h1>
+        <p className="text-muted-foreground text-lg">Manage your generated resumes and billing balance</p>
       </div>
 
-      {/* Credit Summary */}
-      <div className="dashboard-grid">
-        <div className="dashboard-card glass-panel">
-          <div className="dashboard-card-header">
-            <Coins size={18} />
-            <h3>Billing Balance</h3>
-          </div>
-          <div className="dashboard-credit-value">{credits}</div>
-          <p className="dashboard-card-sub">AI tokens remaining</p>
-        </div>
+      {/* Credit Summary Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Billing Balance</CardTitle>
+            <Coins className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold">{credits}</div>
+            <p className="text-xs text-muted-foreground mt-1">AI tokens remaining</p>
+          </CardContent>
+        </Card>
 
-        <div className="dashboard-card glass-panel">
-          <div className="dashboard-card-header">
-            <FileText size={18} />
-            <h3>Resumes Created</h3>
-          </div>
-          <div className="dashboard-credit-value">{resumes.length}</div>
-          <p className="dashboard-card-sub">total resumes</p>
-        </div>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Resumes Created</CardTitle>
+            <FileText className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold">{resumes.length}</div>
+            <p className="text-xs text-muted-foreground mt-1">Total resumes generated</p>
+          </CardContent>
+        </Card>
 
-        <div className="dashboard-card glass-panel action-card" onClick={() => router.push('/builder')} style={{ cursor: 'pointer' }}>
-          <div className="dashboard-card-header">
-            <Plus size={18} />
-            <h3>New Resume</h3>
-          </div>
-          <p className="dashboard-card-sub" style={{ marginTop: '0.5rem' }}>
-            Build a new ATS-optimized resume
-          </p>
-          <ArrowRight size={18} style={{ marginTop: 'auto', color: 'var(--primary)' }} />
-        </div>
+        <Card className="bg-primary text-primary-foreground cursor-pointer hover:bg-primary/90 transition-colors shadow-lg group border-none" onClick={() => router.push('/builder')}>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-semibold">New Resume</CardTitle>
+            <Plus className="h-4 w-4" />
+          </CardHeader>
+          <CardContent className="flex flex-col h-[calc(100%-4rem)] justify-end">
+            <p className="text-sm opacity-90 mb-4">Build a new ATS-optimized resume using AI</p>
+            <ArrowRight className="h-5 w-5 transform transition-transform group-hover:translate-x-1" />
+          </CardContent>
+        </Card>
       </div>
 
       {/* Resume History */}
-      <section className="dashboard-section">
-        <h2>Resume History</h2>
+      <section className="mb-12">
+        <h2 className="text-2xl font-bold mb-6 tracking-tight">Resume History</h2>
         {resumes.length === 0 ? (
-          <div className="dashboard-empty glass-panel">
-            <FileText size={32} style={{ opacity: 0.3 }} />
-            <p>No resumes yet. Create your first one!</p>
-            <Link href="/builder" className="btn-primary">Create Resume <ArrowRight size={16} /></Link>
-          </div>
+          <Card className="flex flex-col items-center justify-center py-16 text-center border-dashed">
+            <FileText className="h-12 w-12 text-muted-foreground/30 mb-4" />
+            <h3 className="text-lg font-medium mb-2">No resumes yet</h3>
+            <p className="text-muted-foreground mb-6">Create your first resume to see it here.</p>
+            <Button onClick={() => router.push('/builder')}>Create Resume <ArrowRight className="ml-2 h-4 w-4" /></Button>
+          </Card>
         ) : (
-          <div className="resume-list">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {resumes.map(resume => (
-              <div key={resume.id} className="resume-list-item glass-panel" onClick={(e) => handleViewResume(resume.id, e)} style={{ cursor: 'pointer', transition: 'transform 0.2s', border: '1px solid transparent' }} onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--primary)'} onMouseLeave={e => e.currentTarget.style.borderColor = 'transparent'}>
-                <div className="resume-list-info">
-                  <div className="resume-icon-wrapper" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(139,92,246,0.1)', padding: '0.75rem', borderRadius: 'var(--radius-md)' }}>
-                    {modalLoading ? <Loader2 size={24} className="spin-icon" style={{ color: 'var(--primary)' }} /> : <FileText size={24} style={{ color: 'var(--primary)' }} />}
+              <Card key={resume.id} className="cursor-pointer hover:border-primary transition-colors flex flex-col group" onClick={(e) => handleViewResume(resume.id, e)}>
+                <CardHeader className="pb-4">
+                  <div className="flex justify-between items-start mb-2">
+                    <div className="flex items-center justify-center p-3 bg-primary/10 text-primary rounded-lg transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
+                      {modalLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <FileText className="h-5 w-5" />}
+                    </div>
                   </div>
-                  <div>
-                    <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      {resume.title}
-                      <span className="view-badge"><Eye size={12} /> View</span>
-                    </h4>
-                    <span className="resume-list-date" style={{ color: 'var(--text-light)', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.35rem', marginTop: '0.25rem' }}>
-                      <Clock size={12} /> {new Date(resume.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                    </span>
+                  <CardTitle className="text-lg line-clamp-1 group flex justify-between items-center">
+                    {resume.title}
+                  </CardTitle>
+                  <CardDescription className="flex items-center gap-1.5 mt-1.5">
+                    <Clock className="h-3.5 w-3.5" /> 
+                    {new Date(resume.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="mt-auto pt-0 pb-4">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Button variant="secondary" size="sm" className="h-8 flex-1 text-xs" onClick={(e) => { e.stopPropagation(); const url = `${window.location.origin}/r/${resume.id}`; navigator.clipboard.writeText(url); setCopiedId(resume.id); setTimeout(() => setCopiedId(null), 2000); }}>
+                      <Share2 className="h-3.5 w-3.5 mr-1.5" /> {copiedId === resume.id ? 'Copied!' : 'Share'}
+                    </Button>
+                    <Button variant="outline" size="sm" className="h-8 flex-1 text-xs text-accent border-accent/20 bg-accent/5 hover:bg-accent/10" onClick={(e) => { e.stopPropagation(); setClResumeId(resume.id); setClJd(''); }}>
+                      <Sparkles className="h-3.5 w-3.5 mr-1.5" /> Cover Letter
+                    </Button>
+                    <Button variant="destructive" size="sm" className="h-8 w-8 p-0" onClick={(e) => handleDelete(resume.id, e)}>
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
                   </div>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <button className="share-badge" onClick={(e) => { e.stopPropagation(); const url = `${window.location.origin}/r/${resume.id}`; navigator.clipboard.writeText(url); setCopiedId(resume.id); setTimeout(() => setCopiedId(null), 2000); }} title="Copy share link">
-                    <Share2 size={12} /> {copiedId === resume.id ? 'Copied!' : 'Share'}
-                  </button>
-                  <button className="share-badge" style={{ background: 'rgba(139, 92, 246, 0.1)', color: 'var(--accent)' }} onClick={(e) => { e.stopPropagation(); setClResumeId(resume.id); setClJd(''); }} title="Generate cover letter">
-                    <Sparkles size={12} /> Cover Letter
-                  </button>
-                  <button className="btn-icon" onClick={(e) => handleDelete(resume.id, e)} title="Delete" style={{ color: 'var(--error)', background: 'rgba(239, 68, 68, 0.1)', padding: '0.5rem', borderRadius: 'var(--radius-sm)' }}>
-                    <Trash2 size={16} />
-                  </button>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
             ))}
           </div>
         )}
       </section>
 
       {/* Transaction History */}
-      <section className="dashboard-section">
-        <h2>Billing Data</h2>
+      <section>
+        <h2 className="text-2xl font-bold mb-6 tracking-tight">Billing Data</h2>
         {transactions.length === 0 ? (
-          <p style={{ opacity: 0.5, fontSize: '0.9rem' }}>No transactions yet.</p>
+          <p className="text-muted-foreground text-sm">No transactions yet.</p>
         ) : (
-          <div className="transaction-list">
-            {transactions.map(tx => (
-              <div key={tx.id} className="transaction-item">
-                <div>
-                  <span className="transaction-desc">{tx.description}</span>
-                  <span className="transaction-date">{new Date(tx.createdAt).toLocaleDateString()}</span>
+          <Card>
+            <div className="divide-y">
+              {transactions.map(tx => (
+                <div key={tx.id} className="flex items-center justify-between p-4 px-6 hover:bg-muted/50 transition-colors">
+                  <div className="flex flex-col gap-1">
+                    <span className="font-medium text-sm">{tx.description}</span>
+                    <span className="text-xs text-muted-foreground">{new Date(tx.createdAt).toLocaleDateString()}</span>
+                  </div>
+                  <span className={`font-semibold ${tx.amount > 0 ? 'text-emerald-500' : 'text-zinc-600 dark:text-zinc-400'}`}>
+                    {tx.amount > 0 ? '+' : ''}{tx.amount}
+                  </span>
                 </div>
-                <span className={`transaction-amount ${tx.amount > 0 ? 'positive' : 'negative'}`}>
-                  {tx.amount > 0 ? '+' : ''}{tx.amount}
-                </span>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          </Card>
         )}
       </section>
 
       {/* Fullscreen Resume Modal */}
       {viewingResume && (
-        <div className="resume-modal-overlay">
-          <div className="resume-modal-content">
-            <button className="resume-modal-close" onClick={() => setViewingResume(null)} type="button">
-              <X size={24} />
-            </button>
-            <div className="resume-modal-scroll-area">
+        <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="w-full max-w-5xl h-[90vh] bg-background border rounded-xl shadow-2xl flex flex-col overflow-hidden relative drop-shadow-2xl">
+            <Button variant="outline" size="icon" className="absolute top-4 right-4 z-10 bg-background/50 hover:bg-background border-zinc-200" onClick={() => setViewingResume(null)}>
+              <X className="h-4 w-4" />
+            </Button>
+            <div className="flex-1 overflow-auto bg-zinc-50 dark:bg-zinc-950 p-2 md:p-6 custom-scrollbar">
               <ResumePreview 
                 resumeMarkdown={viewingResume.type === 'markdown' ? viewingResume.markdown : "Loaded"} 
                 resumeData={viewingResume.type === 'json' ? viewingResume.data : undefined}
@@ -296,93 +302,84 @@ export default function DashboardPage() {
 
       {/* Cover Letter JD Input Modal */}
       {clResumeId && (
-        <div className="resume-modal-overlay">
-          <div className="resume-modal-content" style={{ maxWidth: '550px', padding: '2rem' }}>
-            <button className="resume-modal-close" onClick={() => setClResumeId(null)} type="button"><X size={20} /></button>
-            <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', color: 'var(--accent)' }}>
-              <Sparkles size={20} /> Generate Cover Letter
-            </h3>
-            <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
-              Paste a job description below to generate a tailored cover letter based on your saved resume.
-            </p>
-            <textarea
-              value={clJd}
-              onChange={e => setClJd(e.target.value)}
-              className="input-field jd-textarea"
-              rows={8}
-              placeholder="Paste the job description here (optional)..."
-              style={{ width: '100%', marginBottom: '1rem' }}
-            />
-            <button
-              onClick={handleGenerateCoverLetter}
-              disabled={clLoading}
-              className="btn-primary full-width"
-              style={{ justifyContent: 'center' }}
-            >
-              {clLoading ? <><Loader2 size={16} className="spin-icon" /> Generating...</> : <><Sparkles size={16} /> Generate (2 credits)</>}
-            </button>
-          </div>
+        <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <Card className="w-full max-w-lg shadow-2xl">
+            <CardHeader className="relative">
+              <Button variant="ghost" size="icon" className="absolute top-4 right-4" onClick={() => setClResumeId(null)}>
+                <X className="h-5 w-5" />
+              </Button>
+              <CardTitle className="flex items-center gap-2 text-accent">
+                <Sparkles className="h-5 w-5" /> Generate Cover Letter
+              </CardTitle>
+              <CardDescription>
+                Paste a job description below to generate a tailored cover letter based on your saved resume.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <textarea
+                value={clJd}
+                onChange={e => setClJd(e.target.value)}
+                className="w-full min-h-[200px] p-3 rounded-md border bg-transparent text-sm mb-4 focus:outline-none focus:ring-2 focus:ring-primary"
+                placeholder="Paste the job description here (optional)..."
+              />
+              <Button onClick={handleGenerateCoverLetter} disabled={clLoading} className="w-full">
+                {clLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Generating...</> : <><Sparkles className="mr-2 h-4 w-4" /> Generate (2 credits)</>}
+              </Button>
+            </CardContent>
+          </Card>
         </div>
       )}
 
       {/* Cover Letter Result Modal */}
       {clResult && (
-        <div className="resume-modal-overlay">
-          <div className="resume-modal-content" style={{ maxWidth: '650px', padding: '2rem' }}>
-            <button className="resume-modal-close" onClick={() => { setClResult(null); setClCopied(false); }} type="button"><X size={20} /></button>
-            <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', color: 'var(--accent)' }}>
-              <Sparkles size={20} /> Your Cover Letter
-            </h3>
-            <div style={{ maxHeight: '400px', overflowY: 'auto', marginBottom: '1rem' }}>
+        <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <Card className="w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col h-[80vh]">
+            <CardHeader className="relative shrink-0 border-b bg-muted/30">
+              <Button variant="ghost" size="icon" className="absolute top-4 right-4" onClick={() => { setClResult(null); setClCopied(false); }}>
+                <X className="h-5 w-5" />
+              </Button>
+              <CardTitle className="flex items-center gap-2 text-accent">
+                <Sparkles className="h-5 w-5" /> Your Cover Letter
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="flex-1 overflow-y-auto p-6">
               <textarea
                 value={clResult}
                 onChange={e => setClResult(e.target.value)}
-                className="input-field"
-                rows={16}
-                style={{ width: '100%', lineHeight: '1.7', fontSize: '0.95rem' }}
+                className="w-full h-full min-h-[300px] p-0 border-none bg-transparent resize-none text-sm leading-relaxed focus:outline-none"
               />
+            </CardContent>
+            <div className="p-4 border-t bg-muted/30 shrink-0">
+              <Button onClick={() => { navigator.clipboard.writeText(clResult); setClCopied(true); setTimeout(() => setClCopied(false), 2000); }} className="w-full">
+                {clCopied ? <><Check className="mr-2 h-4 w-4" /> Copied!</> : <><Copy className="mr-2 h-4 w-4" /> Copy to Clipboard</>}
+              </Button>
             </div>
-            <button
-              onClick={() => { navigator.clipboard.writeText(clResult); setClCopied(true); setTimeout(() => setClCopied(false), 2000); }}
-              className="btn-primary full-width"
-              style={{ justifyContent: 'center' }}
-            >
-              {clCopied ? <><Check size={16} /> Copied!</> : <><Copy size={16} /> Copy to Clipboard</>}
-            </button>
-          </div>
+          </Card>
         </div>
       )}
 
       {/* Delete Confirmation Modal */}
       {deleteConfirmId && (
-        <div className="resume-modal-overlay">
-          <div className="resume-modal-content" style={{ maxWidth: '400px', padding: '2rem', textAlign: 'center' }}>
-            <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'rgba(239, 68, 68, 0.1)', color: 'var(--error)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem' }}>
-              <Trash2 size={24} />
-            </div>
-            <h3 style={{ marginBottom: '0.5rem' }}>Delete Resume</h3>
-            <p style={{ color: 'var(--text-muted)', marginBottom: '1.5rem', fontSize: '0.95rem' }}>
-              Are you sure you want to delete this resume? This action cannot be undone.
-            </p>
-            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
-              <button 
-                className="btn-secondary" 
-                onClick={() => setDeleteConfirmId(null)}
-                disabled={deleteLoading}
-                style={{ flex: 1, justifyContent: 'center' }}
-              >
+        <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <Card className="w-full max-w-md shadow-2xl text-center">
+            <CardHeader className="pb-4">
+              <div className="mx-auto w-12 h-12 bg-destructive/10 text-destructive rounded-full flex items-center justify-center mb-4">
+                <Trash2 className="h-6 w-6" />
+              </div>
+              <CardTitle>Delete Resume</CardTitle>
+              <CardDescription>
+                Are you sure you want to delete this resume? This action cannot be undone.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex gap-4">
+              <Button variant="outline" className="flex-1" onClick={() => setDeleteConfirmId(null)} disabled={deleteLoading}>
                 Cancel
-              </button>
-              <button 
-                className="btn-primary" 
-                onClick={confirmDelete}
-                disabled={deleteLoading}
-                style={{ flex: 1, justifyContent: 'center', background: 'var(--error)', borderColor: 'var(--error)', color: 'white' }}
-              >
-                {deleteLoading ? <Loader2 size={16} className="spin-icon" /> : 'Delete'}
-              </button>
-            </div>
-          </div>
+              </Button>
+              <Button variant="destructive" className="flex-1" onClick={confirmDelete} disabled={deleteLoading}>
+                {deleteLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Delete'}
+              </Button>
+            </CardContent>
+          </Card>
         </div>
       )}
     </div>

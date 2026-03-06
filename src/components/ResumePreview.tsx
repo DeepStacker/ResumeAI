@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Download, RefreshCw, FileText, Printer, Check, Loader2, Target, ChevronDown, ChevronUp } from 'lucide-react';
+import { RefreshCw, FileText, Printer, Loader2, Target, ChevronDown, ChevronUp } from 'lucide-react';
 import { useResumeStore } from '@/store/useResumeStore';
+import { ResumeData } from '@/types/resume';
 import { ProfessionalTemplate } from './templates/ProfessionalTemplate';
 import { ModernTemplate } from './templates/ModernTemplate';
 import { MinimalTemplate } from './templates/MinimalTemplate';
@@ -17,8 +18,8 @@ interface AtsResult {
 }
 
 interface ResumePreviewProps {
-  resumeMarkdown: string | null;  // Kept for prop compatibility/trigger, but we use store.data for actual render
-  resumeData?: any;
+  resumeMarkdown: string;
+  resumeData?: Record<string, unknown> | null;
   onResumeChange: (markdown: string) => void;
   onReset: () => void;
   jobDescription?: string;
@@ -26,7 +27,7 @@ interface ResumePreviewProps {
 
 export default function ResumePreview({ resumeMarkdown, resumeData, onReset, jobDescription }: ResumePreviewProps) {
   const store = useResumeStore();
-  const activeData = resumeData || store.data;
+  const activeData = (resumeData || store.data) as ResumeData;
   const [atsResult, setAtsResult] = useState<AtsResult | null>(null);
   const [atsLoading, setAtsLoading] = useState(false);
   const [atsExpanded, setAtsExpanded] = useState(false);

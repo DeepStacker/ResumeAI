@@ -11,7 +11,7 @@ const globalForPrisma = globalThis as unknown as {
 function createPrismaClient() {
     const pool = new pg.Pool({ connectionString });
     const adapter = new PrismaPg(pool);
-    return new PrismaClient({ adapter } as any);
+    return new PrismaClient({ adapter } as unknown as any);
 }
 
 export const prisma = globalForPrisma.prisma ?? createPrismaClient();
