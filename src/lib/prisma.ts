@@ -36,7 +36,7 @@ function createPrismaClient() {
                 };
             } else {
                 // Read the CA cert from disk (useful for local dev or Docker)
-                const caPath = path.resolve(process.cwd(), 'ca.pem');
+                const caPath = path.resolve(process.cwd(), 'prisma', 'ca.pem');
                 if (fs.existsSync(caPath)) {
                     sslOptions = {
                         rejectUnauthorized: true,
