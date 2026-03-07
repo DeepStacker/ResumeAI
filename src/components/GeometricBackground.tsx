@@ -24,7 +24,7 @@ export const GeometricBackground: React.FC = () => {
     if (!ctx) return;
 
     let particles: Particle[] = [];
-    let mouse = {
+    const mouse = {
       x: -100,
       y: -100,
       radius: 150

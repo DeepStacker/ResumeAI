@@ -281,7 +281,7 @@ function DashboardContent() {
             <h1 className="text-4xl font-black tracking-tight flex items-center gap-3 text-white italic uppercase leading-none">
               ORBITAL <span className="text-primary not-italic">DASHBOARD</span> <Sparkles className="text-primary w-8 h-8 animate-pulse" />
             </h1>
-            <p className="text-zinc-400 font-bold tracking-tight uppercase text-[0.65rem] opacity-70">Authenticated: {session?.user?.name?.split(' ')[0]} // Balance: {credits} Credits</p>
+            <p className="text-zinc-400 font-bold tracking-tight uppercase text-[0.65rem] opacity-70">Authenticated: {session?.user?.name?.split(' ')[0]} {"//"} Balance: {credits} Credits</p>
           </div>
           <div className="flex items-center gap-3">
              <Button variant="outline" onClick={() => setShowPricing(true)} className="font-bold border-2 h-11 px-6 hover:bg-primary/5 transition-all">
