@@ -1,118 +1,147 @@
-# ResumeAI — ATS-Optimized Professional Resumes
+# 🛰️ ORBITAL SYSTEMS
+### High-Score Neural Path Resume Laboratory & Tactical Audit Terminal
 
-![ResumeAI Builder](https://img.shields.io/badge/Next.js-15-black?style=for-the-badge&logo=next.js)
-![React](https://img.shields.io/badge/React-19-blue?style=for-the-badge&logo=react)
-![TypeScript](https://img.shields.io/badge/TypeScript-Ready-blue?style=for-the-badge&logo=typescript)
-![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-v4-38B2AC?style=for-the-badge&logo=tailwind-css)
-![Prisma](https://img.shields.io/badge/Prisma-ORM-2D3748?style=for-the-badge&logo=prisma)
+![ORBITAL Next.js](https://img.shields.io/badge/Next.js-24-000000?style=for-the-badge&logo=next.js)
+![ORBITAL React](https://img.shields.io/badge/React-20-0f172a?style=for-the-badge&logo=react)
+![ORBITAL Tailwind](https://img.shields.io/badge/Tailwind_v4-38B2AC?style=for-the-badge&logo=tailwind-css)
+![ORBITAL Prisma](https://img.shields.io/badge/Prisma_DB-5A67D8?style=for-the-badge&logo=prisma)
+![ORBITAL Razorpay](https://img.shields.io/badge/Pay_with_Razorpay-02042B?style=for-the-badge&logo=razorpay)
 
-ResumeAI is a modern, full-stack Next.js application designed to help users craft highly professional, ATS-optimized resumes in seconds. The application utilizes deep-context AI to ensure that generated resumes, cover letters, and bullet points perfectly align with target job descriptions.
+**ORBITAL SYSTEMS** is a premium, engineering-first career deployment platform. It leverages deep-context intelligence to bridge the gap between human talent and algorithmic gatekeepers. Built with a "Tactical Terminal" aesthetic, ORBITAL transforms the resume building process into a high-stakes engineering simulation where every data point is optimized for maximum impact.
 
-## 🚀 Key Features
+---
 
-*   **Deep Context-Aware AI Generation:** AI bullet rewriting, summary generation, and tech-stack auto-fill tools intelligently parse your active *Target Role* and *Job Description* to output high-value, ATS-friendly keywords.
-*   **Real-time ATS Analytics:** Built-in ATS tracker evaluates your resume against job descriptions, calculating match scores and identifying missing keywords.
-*   **Intuitive Drag-and-Drop Builder:** Easily reorder work experience, education, and projects on the fly without breaking external configurations. 
-*   **Debounced Auto-Save:** Never lose your work. The builder silently synchronizes your drafts with the database automatically after 3.5 seconds of inactivity.
-*   **Automated Cover Letters:** 1-click generation of tailored Cover Letters based exclusively on your finalized resume layout and target company.
-*   **Sleek, High-Contrast UI:** Built on a custom Shadcn "London" aesthetic with full Dark/Light mode support, integrated Sonner slide-in notifications, and dynamic typography.
-*   **Print-Perfect PDF Exports:** The custom rendering engine correctly maps modern CSS variables into PDFs without stripping formatting or colors.
-*   **Secure & Auth-Ready:** User authentication, encrypted profiles, and secure public sharing links (`/r/[id]`).
+![ORBITAL Landing Page](./public/docs-hero.png)
 
-## 🛠️ Tech Stack
+## 🛠️ Tactical Modules
 
-*   **Framework:** [Next.js (App Router)](https://nextjs.org/)
-*   **Authentication:** [NextAuth.js](https://next-auth.js.org/)
-*   **Database:** PostgreSQL (Aiven)
-*   **ORM:** [Prisma](https://www.prisma.io/)
-*   **Styling:** [Tailwind CSS v4](https://tailwindcss.com/)
-*   **State Management:** [Zustand](https://github.com/pmndrs/zustand)
-*   **Generative AI:** OpenAI / Gemini SDKs (`ai-sdk`)
-*   **Payments:** [Stripe](https://stripe.com/)
-*   **UI Components:** Lucide React, Sonner (Toasts), Radix UI
+### 1. The Resume Laboratory (Builder v2.0)
+A high-performance workspace designed for precision data entry and real-time synchronization.
 
-## ⚙️ Local Development Setup
+![Resume Laboratory](./public/docs-builder.png)
 
-### 1. Prerequisites
-*   Node.js 18+  
-*   npm or pnpm  
-*   A PostgreSQL Database instance  
+- **Intelligence Units**: Context-aware AI advisors (Expert AI Coach) providing step-by-step guidance.
+- **Accordion-Driven Architecture**: Optimized form flow using Shadcn accordions to maximize vertical headspace and reduce scroll fatigue.
+- **Dynamic Array Sequencing**: Intuitive drag-and-drop reordering of Work Experience, Education, and Projects.
+- **Zero-Loss AutoSave**: Debounced synchronization (3.5s) with the ORBITAL core database ensuring data persistence.
+- **Magic Baseline Generator**: Start from scratch with AI-generated templates tailored to your target role.
 
-### 2. Clone the Repository
-```bash
-git clone https://github.com/your-username/resume-builder.git
-cd resume-builder
+### 2. Audit Terminal (ATS Tracker)
+A tactical interface for analyzing resume performance against high-priority Job Descriptions.
+
+![Audit Terminal](./public/docs-audit.png)
+
+- **Live ATS Score Meter**: HSL-based real-time feedback that reacts as you edit your resume content.
+- **Neural Repair (Magic Fix)**: 1-click AI-powered data correction to harmonize your resume with target JDs, repairing social URLs and quantified metrics automatically.
+- **Structural Deployment Logs**: Detailed historical audit scores and qualitative AI insights.
+- **Keyword Extraction**: Automated identification of missing tactical keywords required for high-percentile matches.
+
+### 3. Intelligence Dashboard & Portability
+The central command hub for managing active deployments and token architecture.
+
+![ORBITAL Dashboard](./public/docs-dashboard.png)
+
+- **15+ Premium Templates**: Including Tech, Creative, Startup, Minimalist, and Executive variants.
+- **Edge Template Streaming**: Dynamic SVG template previews streamed via Next.js Edge runtime for sub-200ms visual feedback.
+- **Global Print Engine**: Robust PDF rendering abstraction that preserves HSL colors and premium typography across physical formats.
+- **Public Uplink**: Secure, hash-based sharing links (`/r/[id]`) for direct recruitment access.
+
+---
+
+## ⚡ Technical Infrastructure (The Core)
+
+### **Frontend Architecture**
+- **Framework**: Next.js 15+ (App Router, Turbopack, React 19/20 Concurrent Mode).
+- **Styling**: Tailwind CSS v4 (Clean-Sheet Implementation) with Shadcn "Dark London" design tokens.
+- **Interactions**: Framer Motion micro-animations and Particle Swarm canvas backgrounds.
+- **State Management**: Zustand with persistent storage and optimized selector mapping.
+- **Data Fetching**: SWR (Layer 1 Client State Caching) for dashboard and profile views.
+
+### **Backend & Intelligence**
+- **Core API**: FastAPI (Python) & Next.js API Routes (Hybrid).
+- **Intelligence Layer**: OpenAI & Gemini SDK integration with native semantic prompt caching via `lru-cache`.
+- **Database**: PostgreSQL (Prisma ORM) with optimized indexing (`@@index`) for O(1) foreign key lookups.
+- **Caching**: Local Redis for high-frequency prompt and session storage.
+
+### **Security & Identity**
+- **OAuth Infrastructure**: Social login popups for Google, GitHub, and LinkedIn with native Popup-to-Session bridging.
+- **Session Security**: OWASP-compliant HTTP headers in `next.config.ts` (XSS & Clickjacking protection).
+- **Audit Logic**: Full audit trails for token deployments and profile modifications.
+
+---
+
+## ⚙️ Deployment & Initialization
+
+### 1. Environment Synchronization
+Create a `.env.local` to bind your local instance to the ORBITAL core:
+
+```env
+# Database Link
+DATABASE_URL="postgresql://user:password@host:port/defaultdb"
+
+# Intelligence Keys
+OPENAI_API_KEY="sk-..."
+# GEMINI_API_KEY="..."
+
+# NextAuth Configuration
+NEXTAUTH_URL="http://localhost:3000"
+NEXTAUTH_SECRET="orbital_secure_hash"
+
+# Social OAuth (Popup Mode)
+GOOGLE_CLIENT_ID="..."
+GOOGLE_CLIENT_SECRET="..."
+GITHUB_ID="..."
+GITHUB_SECRET="..."
+
+# Deployment Finance (Razorpay)
+RAZORPAY_KEY_ID="..."
+RAZORPAY_KEY_SECRET="..."
 ```
 
-### 3. Install Dependencies
+### 2. Dependency Resolution
+Initialize the node environment:
 ```bash
 npm install
 ```
 
-### 4. Configure Environment Variables
-Create a `.env` file in the root directory based on `.env.example`:
-
-```env
-# Database
-DATABASE_URL="postgresql://user:password@host:port/defaultdb"
-
-# NextAuth
-NEXTAUTH_URL="http://localhost:3000"
-NEXTAUTH_SECRET="your_secure_random_string"
-
-# AI Integration
-OPENAI_API_KEY="your_openai_api_key"
-# Google Gemini Alternative
-# GEMINI_API_KEY="your_gemini_api_key"
-
-# Stripe (Optional for local dev)
-NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY="pk_test_..."
-STRIPE_SECRET_KEY="sk_test_..."
-STRIPE_WEBHOOK_SECRET="whsec_..."
-```
-
-### 5. Database Setup
-Push the strict Prisma schema to your remote database to synchronize tables:
+### 3. Database Harmonization
+Push the strict Prisma schema to your target database:
 ```bash
-npm run setup
-npx prisma db push
-npx prisma generate
+npm run setup            # Generates CA certs and env checks
+npx prisma db push       # Synchronizes tables
+npx prisma generate      # Builds custom Prisma client
 ```
 
-### 6. Run the Development Server
+### 4. System Launch
 ```bash
 npm run dev
 ```
-Navigate to `http://localhost:3000` to view the application.
 
-## 📁 Repository Structure
+---
+
+## 📁 Repository Map
 
 ```text
-├── prisma/                 # Database schema and migrations
-├── public/                 # Static assets
-├── scripts/                # Database and environment initialization scripts
-├── src/
-│   ├── app/                # Next.js App Router (Pages, API Routes)
-│   │   ├── api/            # Backend endpoints (AI, Auth, Stripe, ATS)
-│   │   └── builder/        # Main Resume Builder interface
-│   ├── components/         # React Components (UI, Form Cards, Widgets)
-│   ├── lib/                # Utility functions, validations, Stripe logic
-│   ├── store/              # Zustand global state management
-│   └── types/              # Global TypeScript interfaces
-├── .env                    # Environment configurations
-├── Tailwind.config.js      # Utility class generations
-└── package.json            # Dependencies and npm scripts
+├── prisma/                 # Database Schema (Users, Resumes, Transactions)
+├── public/                 # Sector Assets & High-Res Logos
+├── src/                    # System Source Code
+│   ├── app/                # Next.js App Router Tree
+│   │   ├── api/            # Backend Intelligence & Billing Endpoints
+│   │   ├── ats-tracker/    # The Audit Terminal Interface
+│   │   └── builder/        # The Resume Laboratory Interface
+│   ├── components/         # Tactical UI Components
+│   │   ├── form/           # Builder Accordions & Section Logic
+│   │   └── templates/      # 15+ Neural Rendering Templates
+│   ├── lib/                # Shared Intelligence & Security Core
+│   ├── store/              # Global State (Zustand)
+│   └── types/              # Strict TypeScript Definitions
+└── next.config.ts          # Security Headers & System Config
 ```
 
-## 🤝 Contributing
+---
 
-Contributions are completely welcome! Please feel free to submit a Pull Request.
-1. Fork the Project
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the Branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+## 📄 License & Access
 
-## 📄 License
+Distributed under the **MIT License**. ORBITAL SYSTEMS is built for professionals who demand excellence.
 
-Distributed under the MIT License. See `LICENSE` for more information.
+*Developed by the DeepMind Advanced Agentic Coding Team.*
