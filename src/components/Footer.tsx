@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Sparkles, Twitter, Github, Linkedin, Mail, ShieldCheck, Zap, BarChart3, MessageCircle } from 'lucide-react';
+import { Sparkles, Twitter, Github, Linkedin, Mail, ShieldCheck, Zap, BarChart3, MessageCircle, Cpu } from 'lucide-react';
 
 export default function Footer() {
   const pathname = usePathname();
@@ -14,12 +14,14 @@ export default function Footer() {
         <div className="grid grid-cols-1 gap-12 md:grid-cols-4 lg:gap-16">
           {/* Brand Column */}
           <div className="space-y-4">
-            <Link href="/" className="flex items-center gap-2 text-primary transition-opacity hover:opacity-80">
-              <Sparkles size={20} />
-              <span className="text-xl font-bold tracking-tight">ResumeAI</span>
+            <Link href="/" className="flex items-center gap-3 text-primary transition-all hover:scale-105 group relative">
+              <div className="relative flex h-10 w-10 items-center justify-center bg-primary text-white skew-x-[-8deg] shadow-[0_0_15px_rgba(var(--primary-rgb),0.3)] group-hover:shadow-[0_0_25px_rgba(var(--primary-rgb),0.5)] transition-all">
+                <div className="skew-x-[8deg]"><Cpu size={18} /></div>
+              </div>
+              <span className="text-xl font-black tracking-tighter uppercase italic text-white group-hover:text-primary transition-colors">ORBITAL<span className="text-primary not-italic">SYSTEMS</span></span>
             </Link>
-            <p className="text-sm leading-relaxed text-muted-foreground">
-              Empowering job seekers with state-of-the-art AI to build ATS-optimized resumes and land more interviews.
+            <p className="text-xs font-bold leading-relaxed text-zinc-400 uppercase tracking-widest opacity-60">
+              Engineering the next generation of career deployments with high-precision neural intelligence.
             </p>
             <div className="flex items-center gap-4 text-muted-foreground">
               <Link href="#" className="hover:text-primary transition-colors"><Twitter size={18} /></Link>
@@ -32,11 +34,11 @@ export default function Footer() {
           {/* Product Column */}
           <div className="space-y-4">
             <h4 className="text-sm font-bold uppercase tracking-wider text-foreground">Product</h4>
-            <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><Link href="/builder" className="hover:text-primary transition-colors flex items-center gap-2"><Zap size={14} /> AI Builder</Link></li>
-              <li><Link href="/ats-tracker" className="hover:text-primary transition-colors flex items-center gap-2"><BarChart3 size={14} /> ATS Tracker</Link></li>
-              <li><Link href="/dashboard" className="hover:text-primary transition-colors flex items-center gap-2"><ShieldCheck size={14} /> Dashboard</Link></li>
-              <li><button onClick={() => (window as any).openChat?.()} className="hover:text-primary transition-colors flex items-center gap-2"><MessageCircle size={14} /> AI Counselor</button></li>
+            <ul className="space-y-3 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">
+              <li><Link href="/builder" className="hover:text-primary transition-colors flex items-center gap-2"><Zap size={14} className="text-primary" /> Neural Builder</Link></li>
+              <li><Link href="/ats-tracker" className="hover:text-primary transition-colors flex items-center gap-2"><BarChart3 size={14} className="text-primary" /> Tracking Unit</Link></li>
+              <li><Link href="/dashboard" className="hover:text-primary transition-colors flex items-center gap-2"><ShieldCheck size={14} className="text-primary" /> Cmd Center</Link></li>
+              <li><button onClick={() => (window as any).openChat?.()} className="hover:text-primary transition-colors flex items-center gap-2"><MessageCircle size={14} className="text-primary" /> Intelligence Unit</button></li>
             </ul>
           </div>
 
@@ -70,8 +72,8 @@ export default function Footer() {
         </div>
 
         <div className="mt-12 flex flex-col items-center justify-between border-t pt-8 gap-4 md:flex-row">
-          <p className="text-xs text-muted-foreground text-center md:text-left">
-            © {new Date().getFullYear()} ResumeAI. Designed for visual excellence and academic precision.
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 text-center md:text-left">
+            © {new Date().getFullYear()} ORBITAL SYSTEMS // SECURED TERMINAL
           </p>
           <div className="flex items-center gap-6 text-xs font-medium text-muted-foreground">
             <Link href="#" className="hover:text-primary transition-colors">Privacy Policy</Link>

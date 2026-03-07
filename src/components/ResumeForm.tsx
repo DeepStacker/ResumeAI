@@ -16,6 +16,7 @@ import { ProjectsSection } from '@/components/form/ProjectsSection';
 import { EducationSection } from '@/components/form/EducationSection';
 import { resumeSchema } from '@/lib/validations/resume';
 import { toast } from 'sonner';
+import { createPortal } from 'react-dom';
 
 interface ResumeFormProps {
   onSubmit: (data: ResumeData) => void;
@@ -1446,7 +1447,7 @@ export default function ResumeForm({ onSubmit, isLoading }: ResumeFormProps) {
       </form>
 
       {/* Custom Confirm Reset Modal */}
-      {showConfirmReset && (
+      {showConfirmReset && typeof document !== 'undefined' && createPortal(
         <div className="resume-modal-overlay">
           <div className="resume-modal-content" style={{ maxWidth: '450px', padding: '2rem', textAlign: 'center' }}>
             <h3 style={{ marginBottom: '1rem', color: 'var(--error)' }}>Start Fresh?</h3>
@@ -1471,7 +1472,8 @@ export default function ResumeForm({ onSubmit, isLoading }: ResumeFormProps) {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

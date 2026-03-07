@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { useSession, signOut } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { User, LogOut, CreditCard, ChevronDown, Coins, Sparkles, Settings } from 'lucide-react';
 import {
@@ -22,8 +23,10 @@ export default function UserMenu() {
 
   if (!session?.user) {
     return (
-      <Link href="/auth/signin" className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground shadow hover:bg-primary/90 h-9 px-4 py-2">
-        <User size={16} /> Sign In
+      <Link href="/auth/signin">
+        <button className="h-10 px-6 bg-primary text-white font-black uppercase tracking-widest text-[0.65rem] skew-x-[-12deg] transition-all hover:scale-105 active:scale-95">
+          <span className="skew-x-[12deg] flex items-center gap-2">Connect <User size={14} /></span>
+        </button>
       </Link>
     );
   }
@@ -34,64 +37,69 @@ export default function UserMenu() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button className="flex items-center gap-2 rounded-full border border-border bg-background p-1 pr-3 text-sm font-medium transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-          <Avatar className="h-7 w-7">
-            <AvatarImage src={session.user.image || ""} alt={session.user.name || "User avatar"} />
-            <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">{initals}</AvatarFallback>
-          </Avatar>
-          <div className="flex flex-col items-start text-left leading-none">
-            <span className="text-[13px] font-semibold">{session.user.name || session.user.email?.split('@')[0]}</span>
-            <span className="flex items-center gap-1 text-[10px] text-muted-foreground font-medium">
-              <Coins size={10} className="text-yellow-500" /> {credits} tokens
+        <button className="flex items-center gap-3 bg-white/5 border border-white/10 p-1 pr-4 skew-x-[-8deg] transition-all hover:bg-white/10 hover:border-primary/50 group outline-none">
+          <div className="skew-x-[8deg]">
+            <Avatar className="h-8 w-8 rounded-none border border-white/10 transition-transform group-hover:scale-110">
+              <AvatarImage src={session.user.image || ""} alt={session.user.name || "User avatar"} />
+              <AvatarFallback className="bg-primary text-white text-[10px] font-black rounded-none">{initals}</AvatarFallback>
+            </Avatar>
+          </div>
+          <div className="flex flex-col items-start text-left leading-none skew-x-[8deg]">
+            <span className="text-[11px] font-black uppercase tracking-wider text-white truncate max-w-[100px]">{session.user.name || session.user.email?.split('@')[0]}</span>
+            <span className="flex items-center gap-1.5 text-[10px] font-black text-primary">
+              <Coins size={10} /> {credits} FUEL
             </span>
           </div>
-          <ChevronDown size={14} className="text-muted-foreground ml-1 opacity-50 transition-transform dropdown-open-rotate" />
+          <ChevronDown size={14} className="text-zinc-400 skew-x-[8deg] transition-transform group-data-[state=open]:rotate-180" />
         </button>
       </DropdownMenuTrigger>
       
-      <DropdownMenuContent className="w-56" align="end" forceMount>
-        <DropdownMenuLabel className="font-normal">
+      <DropdownMenuContent className="w-64 bg-zinc-950/95 backdrop-blur-3xl border-white/10 rounded-none p-2 shadow-2xl" align="end" sideOffset={12}>
+        <DropdownMenuLabel className="px-3 py-4">
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">{session.user.name}</p>
-            <p className="text-xs leading-none text-muted-foreground">
+            <p className="text-xs font-black uppercase tracking-widest text-white">{session.user.name}</p>
+            <p className="text-[11px] font-medium text-zinc-400 truncate">
               {session.user.email}
             </p>
           </div>
         </DropdownMenuLabel>
         
-        <DropdownMenuSeparator />
+        <DropdownMenuSeparator className="bg-white/5" />
         
         <DropdownMenuGroup>
-          <div className="flex items-center justify-between px-2 py-1.5 text-sm">
-            <span className="flex items-center text-muted-foreground">
-              <CreditCard className="mr-2 h-4 w-4" /> Balance
+          <div className="flex items-center justify-between px-3 py-3 bg-primary/5 border border-primary/10 my-1">
+            <span className="flex items-center text-[10px] font-black uppercase tracking-widest text-zinc-300">
+              <CreditCard className="mr-2 h-4 w-4 text-primary" /> Neural Balance
             </span>
-            <span className="font-bold text-primary">{credits}</span>
+            <span className="text-sm font-black italic text-primary">{credits} FUEL</span>
           </div>
         </DropdownMenuGroup>
 
-        <DropdownMenuSeparator />
+        <DropdownMenuSeparator className="bg-white/5" />
 
-        <DropdownMenuGroup>
-          <DropdownMenuItem asChild>
-            <Link href="/profile" className="cursor-pointer">
-              <Settings className="mr-2 h-4 w-4" />
-              <span>Profile Settings</span>
+        <DropdownMenuGroup className="space-y-1 py-1">
+          <DropdownMenuItem asChild className="focus:bg-white/5 cursor-pointer rounded-none group">
+            <Link href="/profile" className="flex items-center w-full px-3 py-2">
+              <Settings className="mr-3 h-4 w-4 text-zinc-400 group-hover:text-primary transition-colors" />
+              <span className="text-[10px] font-black uppercase tracking-widest text-zinc-200 group-hover:text-white">Protocol Settings</span>
             </Link>
           </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link href="/dashboard?purchase=true" className="cursor-pointer text-primary focus:text-primary">
-              <Sparkles className="mr-2 h-4 w-4" />
-              <span>Get AI Tokens</span>
+          <DropdownMenuItem asChild className="focus:bg-primary focus:text-white cursor-pointer rounded-none group">
+            <Link href="/dashboard?purchase=true" className="flex items-center w-full px-3 py-2">
+              <Sparkles className="mr-3 h-4 w-4 text-primary group-focus:text-white transition-colors" />
+              <span className="text-[10px] font-black uppercase tracking-widest">Aquire Power Tokens</span>
             </Link>
           </DropdownMenuItem>
         </DropdownMenuGroup>
         
-        <DropdownMenuSeparator />
+        <DropdownMenuSeparator className="bg-white/5" />
         
-        <DropdownMenuItem onClick={() => signOut({ callbackUrl: '/auth/signin' })} className="cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10">
-          <LogOut className="mr-2 h-4 w-4" />
-          <span>Log out</span>
+        <DropdownMenuItem 
+          onClick={() => signOut({ callbackUrl: '/auth/signin' })} 
+          className="focus:bg-red-500/10 focus:text-red-400 cursor-pointer rounded-none px-3 py-2 group mt-1"
+        >
+          <LogOut className="mr-3 h-4 w-4 text-zinc-400 group-hover:text-red-400 transition-colors" />
+          <span className="text-[10px] font-black uppercase tracking-widest text-zinc-200 group-hover:text-red-400">Terminate Session</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

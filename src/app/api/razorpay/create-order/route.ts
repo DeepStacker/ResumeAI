@@ -35,8 +35,8 @@ export async function POST(req: Request) {
             key_secret,
         });
 
-        // Razorpay expects amount in paise (1 INR = 100 paise)
-        const amountInPaise = pkg.amount * 100;
+        // pkg.amount is already in paise according to PACKAGES definition
+        const amountInPaise = pkg.amount;
 
         const options = {
             amount: amountInPaise,

@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { Mail, Lock, Loader2, Sparkles, ArrowRight, User, Github, Linkedin, ChevronLeft } from 'lucide-react';
+import { Mail, Lock, Loader2, Sparkles, ArrowRight, User, Github, Linkedin, ChevronLeft, Cpu } from 'lucide-react';
 import { useMousePosition } from '@/hooks/useMousePosition';
 import Link from 'next/link';
 
@@ -108,8 +108,8 @@ export default function AuthPage() {
       />
       <div className="absolute top-0 left-0 w-full h-full bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 pointer-events-none z-0" />
       
-      <Link href="/" className="absolute top-8 left-8 z-10 hidden md:flex items-center gap-2 text-sm font-black uppercase tracking-widest opacity-40 hover:opacity-100 transition-opacity">
-        <ChevronLeft size={16} /> Back to Base
+      <Link href="/" className="absolute top-8 left-8 z-10 hidden md:flex items-center gap-3 text-xs font-black uppercase tracking-widest opacity-60 hover:opacity-100 transition-opacity text-white">
+        <ChevronLeft size={16} className="text-primary" /> Return to Orbit
       </Link>
 
       <div className="relative z-10 w-full max-w-[450px]">
@@ -117,11 +117,11 @@ export default function AuthPage() {
           
           {/* Logo & Branding */}
           <div className="flex flex-col items-center text-center mb-10">
-            <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center text-primary mb-6 shadow-glow animate-pulse">
-              <Sparkles size={32} />
+            <div className="w-20 h-20 bg-primary/10 rounded-2xl flex items-center justify-center text-primary mb-6 shadow-[0_0_30px_rgba(var(--primary-rgb),0.3)] animate-pulse border border-primary/20">
+              <Cpu size={40} />
             </div>
-            <h1 className="text-3xl font-black tracking-tighter uppercase italic italic">Resume<span className="text-primary">AI</span></h1>
-            <p className="text-zinc-500 text-sm font-medium mt-2 tracking-tight">Deploy your career with precision.</p>
+            <h1 className="text-4xl font-black tracking-tighter uppercase italic text-white leading-none">ORBITAL<span className="text-primary">SYSTEMS</span></h1>
+            <p className="text-zinc-400 text-xs font-bold mt-4 tracking-[0.2em] uppercase opacity-60">Neural Career Processing</p>
           </div>
 
           {/* Tab Switch */}
@@ -153,13 +153,13 @@ export default function AuthPage() {
               <div className="space-y-2">
                 <label className="text-[0.65rem] font-bold uppercase tracking-[0.3em] opacity-40 ml-2">Identity</label>
                 <div className="relative group">
-                  <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 group-focus-within:text-primary transition-colors" />
+                  <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 group-focus-within:text-primary transition-colors" />
                   <input 
                     type="text" 
                     value={name} 
                     onChange={e => setName(e.target.value)}
-                    className="w-full bg-black/20 border-2 border-white/5 rounded-2xl h-14 pl-12 pr-4 text-sm font-medium focus:border-primary focus:bg-black/40 transition-all outline-none" 
-                    placeholder="Full Name" 
+                    className="w-full bg-black/40 border-2 border-white/10 rounded-2xl h-14 pl-12 pr-4 text-sm font-medium text-white placeholder:text-zinc-600 focus:border-primary focus:bg-black/60 transition-all outline-none" 
+                    placeholder="Full Identity Name" 
                   />
                 </div>
               </div>
@@ -168,13 +168,13 @@ export default function AuthPage() {
             <div className="space-y-2">
               <label className="text-[0.65rem] font-bold uppercase tracking-[0.3em] opacity-40 ml-2">Email Address</label>
               <div className="relative group">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 group-focus-within:text-primary transition-colors" />
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 group-focus-within:text-primary transition-colors" />
                 <input 
                   type="email" 
                   value={email} 
                   onChange={e => setEmail(e.target.value)}
-                  className="w-full bg-black/20 border-2 border-white/5 rounded-2xl h-14 pl-12 pr-4 text-sm font-medium focus:border-primary focus:bg-black/40 transition-all outline-none" 
-                  placeholder="name@company.com" 
+                  className="w-full bg-black/40 border-2 border-white/10 rounded-2xl h-14 pl-12 pr-4 text-sm font-medium text-white placeholder:text-zinc-600 focus:border-primary focus:bg-black/60 transition-all outline-none" 
+                  placeholder="comm_link@orbital.sys" 
                   required 
                 />
               </div>
@@ -183,12 +183,12 @@ export default function AuthPage() {
             <div className="space-y-2">
               <label className="text-[0.65rem] font-bold uppercase tracking-[0.3em] opacity-40 ml-2">Password</label>
               <div className="relative group">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 group-focus-within:text-primary transition-colors" />
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 group-focus-within:text-primary transition-colors" />
                 <input 
                   type="password" 
                   value={password} 
                   onChange={e => setPassword(e.target.value)}
-                  className="w-full bg-black/20 border-2 border-white/5 rounded-2xl h-14 pl-12 pr-4 text-sm font-medium focus:border-primary focus:bg-black/40 transition-all outline-none" 
+                  className="w-full bg-black/40 border-2 border-white/10 rounded-2xl h-14 pl-12 pr-4 text-sm font-medium text-white placeholder:text-zinc-600 focus:border-primary focus:bg-black/60 transition-all outline-none" 
                   placeholder="••••••••" 
                   required 
                   minLength={tab === 'signin' ? 4 : 6}

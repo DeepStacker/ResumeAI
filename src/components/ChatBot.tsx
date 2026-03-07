@@ -19,13 +19,13 @@ interface Message {
 const WELCOME_MSG: Message = {
   id: 'welcome',
   role: 'assistant',
-  content: "Hey! 👋 I'm your AI Career Counselor.\n\nI can help you:\n• **Build a resume** through conversation\n• **Answer career questions** and clear doubts\n• **Parse your existing resume** — just attach a file!\n\n**What would you like to do?**"
+  content: "Greetings. I am the **ORBITAL Intelligence Unit**.\n\nI am authorized to:\n• **Initialize** a neural build via console\n• **Process** career queries and logic\n• **Analyze** existing data structures — upload your file!\n\n**Awaiting command protocol.**"
 };
 
 const WELCOME_SUGGESTIONS = [
-  "Build a resume from scratch",
-  "Upload my existing resume",
-  "I need career guidance"
+  "Initialize Neural Build",
+  "Upload Data Structure",
+  "Aquire Career Guidance"
 ];
 
 // ─── Resume Data Validator ───────────────────────────
@@ -644,11 +644,11 @@ export default function ChatBot() {
                 <div className="skew-x-[8deg]"><Bot size={20} /></div>
               </div>
               <div>
-                <h4 className="font-black uppercase italic tracking-tighter">AI Counselor</h4>
+                <h4 className="font-black uppercase italic tracking-tighter text-white">Orbital Intelligence</h4>
                 <div className="flex items-center gap-1.5">
-                  <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse"></span>
-                  <span className="text-[10px] uppercase font-bold tracking-widest text-zinc-400">
-                    {uploading ? 'Parsing...' : loading ? 'Thinking...' : 'Operational'}
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                  <span className="text-[10px] uppercase font-bold tracking-[0.15em] text-zinc-300">
+                    {uploading ? 'PARSING...' : loading ? 'THINKING...' : 'OPERATIONAL'}
                   </span>
                 </div>
               </div>
@@ -703,8 +703,8 @@ export default function ChatBot() {
             <div className="p-4 bg-zinc-950/80 border-t border-primary/20 space-y-4">
               <div className="space-y-2">
                 <div className="flex justify-between items-end">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 text-zinc-500">Readiness Report</span>
-                  <span className={`text-xl font-black italic ${validation.passed ? 'text-green-500' : 'text-primary'}`}>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-zinc-300">Readiness Report</span>
+                  <span className={`text-xl font-black italic ${validation.passed ? 'text-emerald-400' : 'text-primary'}`}>
                     {validation.score}%
                   </span>
                 </div>
@@ -732,7 +732,7 @@ export default function ChatBot() {
 
           <div className="p-4 bg-zinc-950 border-t border-white/10 flex items-center gap-2">
             <button
-              className="p-3 text-zinc-500 hover:text-white transition-colors"
+              className="p-3 text-zinc-400 hover:text-white transition-colors"
               onClick={() => fileInputRef.current?.click()}
               disabled={loading || uploading}
             >

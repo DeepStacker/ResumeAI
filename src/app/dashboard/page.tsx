@@ -21,9 +21,11 @@ import {
   Copy, 
   Check, 
   BarChart3, 
-  Stars 
+  Stars,
+  Zap
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
+import { toast } from 'sonner';
 
 const ResumePreview = dynamic(() => import('@/components/ResumePreview'), {
   ssr: false,
@@ -122,7 +124,7 @@ function DashboardContent() {
       const data = await res.json();
 
       if (!data.id) {
-        alert(data.error || 'Failed to start checkout');
+        toast.error(data.error || 'Failed to start checkout');
         return;
       }
 
@@ -130,8 +132,8 @@ function DashboardContent() {
         key: data.keyId,
         amount: data.amount,
         currency: data.currency,
-        name: 'AI Resume Builder',
-        description: data.name,
+        name: 'ORBITAL SYSTEMS',
+        description: 'Intelligence Unit Deployment',
         order_id: data.id,
         handler: async function (response: any) {
              setPurchaseLoading(packageId);
@@ -149,17 +151,24 @@ function DashboardContent() {
                 
                 const verifyData = await verifyRes.json();
                 if (verifyData.success) {
+                    toast.success('Payment successful! Credits added to your account.');
                     setShowPricing(false);
                     mutateCredits();
                 } else {
-                    alert('Payment Verification Failed: ' + verifyData.error);
+                    toast.error('Payment Verification Failed: ' + verifyData.error);
                 }
              } catch (err) {
-                 alert('Error verifying payment.');
+                 toast.error('Error verifying payment.');
              } finally {
                  setPurchaseLoading(null);
              }
         },
+        modal: {
+             ondismiss: function() {
+                 setPurchaseLoading(null);
+                 toast.info('Payment cancelled.');
+             }
+         },
         prefill: {
             name: session?.user?.name || '',
             email: session?.user?.email || '',
@@ -173,7 +182,7 @@ function DashboardContent() {
       razorpay.open();
 
     } catch (err) {
-      alert('Network error while starting checkout.');
+      toast.error('Network error while starting checkout.');
     } finally {
       if (document.querySelector('.razorpay-container')) {
          setPurchaseLoading(null); 
@@ -201,9 +210,10 @@ function DashboardContent() {
       if (res.ok) {
         mutateResumes();
         setDeleteConfirmId(null);
+        toast.success('Resume deleted successfully.');
       }
     } catch {
-      alert('Failed to delete resume');
+      toast.error('Failed to delete resume');
     } finally {
       setDeleteLoading(false);
     }
@@ -219,10 +229,10 @@ function DashboardContent() {
         const resume = responseData.resume;
         setViewingResume(resume);
       } else {
-        alert('Failed to load resume.');
+        toast.error('Failed to load resume.');
       }
     } catch {
-      alert('Error loading resume.');
+      toast.error('Error loading resume.');
     } finally {
       setModalLoading(false);
     }
@@ -243,11 +253,12 @@ function DashboardContent() {
         setClResumeId(null); 
         mutateResumes();
         mutateCredits();
+        toast.success('Cover letter generated!');
       } else {
-        alert(data.error || 'Failed to generate cover letter.');
+        toast.error(data.error || 'Failed to generate cover letter.');
       }
     } catch {
-      alert('Network error. Please try again.');
+      toast.error('Network error. Please try again.');
     } finally {
       setClLoading(false);
     }
@@ -262,15 +273,15 @@ function DashboardContent() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-50/50 dark:bg-zinc-950/50">
+    <div className="flex-1 bg-zinc-50/50 dark:bg-zinc-950/50">
       <div className="container mx-auto px-6 py-12 md:px-8">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
           <div className="space-y-2">
-            <h1 className="text-4xl font-black tracking-tight flex items-center gap-3 text-zinc-900 dark:text-zinc-100 italic uppercase">
-              Dashboard <Sparkles className="text-primary w-6 h-6 animate-pulse" />
+            <h1 className="text-4xl font-black tracking-tight flex items-center gap-3 text-white italic uppercase leading-none">
+              ORBITAL <span className="text-primary not-italic">DASHBOARD</span> <Sparkles className="text-primary w-8 h-8 animate-pulse" />
             </h1>
-            <p className="text-muted-foreground font-medium">Welcome back, {session?.user?.name?.split(' ')[0]}. You have {credits} AI credits.</p>
+            <p className="text-zinc-400 font-bold tracking-tight uppercase text-[0.65rem] opacity-70">Authenticated: {session?.user?.name?.split(' ')[0]} // Balance: {credits} Credits</p>
           </div>
           <div className="flex items-center gap-3">
              <Button variant="outline" onClick={() => setShowPricing(true)} className="font-bold border-2 h-11 px-6 hover:bg-primary/5 transition-all">
@@ -292,8 +303,8 @@ function DashboardContent() {
                 <FileText className="h-4 w-4 text-primary" />
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-black">{totalResumes}</div>
-                <p className="text-xs text-muted-foreground mt-1 text-zinc-500">Stored in your cloud</p>
+                <div className="text-4xl font-black text-white">{totalResumes}</div>
+                <p className="text-[0.6rem] font-black uppercase tracking-widest text-zinc-500 mt-2">Cloud Deployments</p>
               </CardContent>
            </Card>
            <Card className="border-2 shadow-sm bg-background/60 backdrop-blur">
@@ -302,8 +313,8 @@ function DashboardContent() {
                 <Coins className="h-4 w-4 text-amber-500" />
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-black">{credits}</div>
-                <p className="text-xs text-muted-foreground mt-1 text-zinc-500">Ready for generation</p>
+                <div className="text-4xl font-black text-amber-500">{credits}</div>
+                <p className="text-[0.6rem] font-black uppercase tracking-widest text-zinc-500 mt-2">Neural Tokens</p>
               </CardContent>
            </Card>
            <Card className="border-2 shadow-sm bg-background/60 backdrop-blur">
@@ -312,9 +323,9 @@ function DashboardContent() {
                 <BarChart3 className="h-4 w-4 text-emerald-500" />
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-black">{avgScore}%</div>
-                <div className="mt-2 h-1.5 w-full bg-muted rounded-full overflow-hidden">
-                   <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${avgScore}%` }} />
+                <div className="text-4xl font-black text-emerald-500">{avgScore}%</div>
+                <div className="mt-3 h-2 w-full bg-zinc-800 rounded-full overflow-hidden">
+                   <div className="h-full bg-emerald-500 rounded-full shadow-[0_0_10px_rgba(16,185,129,0.5)]" style={{ width: `${avgScore}%` }} />
                 </div>
               </CardContent>
            </Card>
@@ -405,19 +416,21 @@ function DashboardContent() {
           </div>
 
           <div className="lg:col-span-4 space-y-6">
-             <Card className="border-2 shadow-lg bg-zinc-900 text-zinc-50 dark:bg-zinc-800 overflow-hidden relative">
-                <div className="absolute top-0 right-0 p-4 opacity-10"><Stars size={60} /></div>
+             <Card className="border-2 shadow-xl bg-zinc-900 border-white/5 text-white overflow-hidden relative group">
+                <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-30 transition-opacity"><Stars size={80} /></div>
                 <CardHeader className="p-8 pb-4">
-                  <CardTitle className="text-xl font-black uppercase tracking-widest italic">Power Up</CardTitle>
-                  <CardDescription className="text-zinc-400 font-medium mt-2">Get back into the game with more credits.</CardDescription>
+                  <CardTitle className="text-xl font-black uppercase tracking-widest italic text-white flex items-center gap-2">
+                    <Zap size={20} className="text-primary" /> Power Up
+                  </CardTitle>
+                  <CardDescription className="text-zinc-400 font-bold text-xs uppercase tracking-widest mt-2">Sector Credits Depleted</CardDescription>
                 </CardHeader>
                 <CardContent className="p-8 pt-0">
-                   <div className="flex items-baseline gap-2 mb-6 tracking-tighter text-zinc-50 font-black">
-                      <span className="text-5xl">$5</span>
-                      <span className="text-zinc-500 uppercase text-xs tracking-widest">PRO PACK</span>
+                   <div className="flex items-baseline gap-2 mb-8 tracking-tighter text-white font-black">
+                      <span className="text-6xl text-primary italic">₹5</span>
+                      <span className="text-zinc-500 uppercase text-[0.6rem] tracking-[0.3em] font-black">ELITE PACK</span>
                    </div>
-                   <Button onClick={() => setShowPricing(true)} className="w-full h-12 font-black uppercase tracking-widest text-[0.7rem] bg-white text-black hover:bg-zinc-200 shadow-xl">
-                      Unleash AI Power
+                   <Button onClick={() => setShowPricing(true)} className="w-full h-14 font-black uppercase tracking-widest text-[0.75rem] bg-white text-black hover:bg-primary hover:text-white transition-all shadow-2xl border-none skew-x-[-12deg]">
+                      <span className="skew-x-[12deg]">Unleash Core</span>
                    </Button>
                 </CardContent>
              </Card>

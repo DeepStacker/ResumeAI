@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import ResumeForm from '@/components/ResumeForm';
 
@@ -17,10 +17,41 @@ import { AlertCircle, Loader2 } from 'lucide-react';
 export default function Home() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [resumeMarkdown, setResumeMarkdown] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const lastJD = useRef<string>('');
+  
+  const resumeId = searchParams?.get('id');
+
+  // Load existing resume data if ID is present
+  useEffect(() => {
+    if (status === 'authenticated' && resumeId) {
+      const fetchResume = async () => {
+        setIsLoading(true);
+        try {
+          const res = await fetch(`/api/resumes?id=${resumeId}`);
+          if (res.ok) {
+            const responseData = await res.json();
+            if (responseData.resume) {
+              const { data, id, markdown } = responseData.resume;
+              useResumeStore.getState().setResumeData(data);
+              useResumeStore.getState().setCurrentResumeId(id);
+              if (markdown) setResumeMarkdown(markdown);
+              else setResumeMarkdown('Loaded'); // Trigger preview even if no markdown yet
+            }
+          }
+        } catch (err) {
+          console.error("Failed to fetch resume:", err);
+          setError("Failed to load existing resume data.");
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      fetchResume();
+    }
+  }, [resumeId, status]);
 
   if (status === 'loading') {
     return (
@@ -79,7 +110,7 @@ export default function Home() {
   const hasResume = resumeMarkdown !== null;
 
   return (
-    <div className="min-h-screen bg-muted/30 p-4 md:p-8 max-w-[1600px] mx-auto transition-all duration-500">
+    <div className="flex-1 bg-muted/30 p-4 md:p-8 max-w-[1600px] mx-auto transition-all duration-500 w-full">
       {error && (
         <div className="flex items-center gap-2 p-4 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-lg max-w-3xl mx-auto mb-6">
           <AlertCircle className="h-4 w-4 shrink-0" />
