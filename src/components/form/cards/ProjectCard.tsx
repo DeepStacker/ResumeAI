@@ -1,6 +1,7 @@
 import React from 'react';
 import { Trash2, Loader2, Sparkles, ChevronUp, ChevronDown } from 'lucide-react';
 import { DebouncedInput, DebouncedTextarea } from '@/components/DebouncedInput';
+import { AIBadge } from '@/components/AIBadge';
 import { ProjectEntry } from '@/types/resume';
 
 interface ProjectCardProps {
@@ -75,23 +76,13 @@ export function ProjectCard({
         <div className="grid gap-2">
           <div className="flex items-center justify-between gap-2">
             <label className="text-base font-semibold leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-3">Tech Stack</label>
-            <button
-              type="button"
+            <AIBadge 
+              label="AI Auto-fill" 
+              type="generate"
               onClick={() => onSuggestTechStack(proj.id, proj.description)}
-              disabled={loadingSuggestion === proj.id + '_tech' || !proj.description}
-              className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-primary/30 text-primary hover:bg-primary/10 h-10 px-4 text-base gap-1.5"
-              style={{ padding: '0.2rem 0.5rem', fontSize: '0.75rem' }}
-            >
-              {loadingSuggestion === proj.id + '_tech' ? (
-                <>
-                  <Loader2 size={12} className="animate-spin" /> Auto-filling...
-                </>
-              ) : (
-                <>
-                  <Sparkles size={12} /> Auto-fill from Desc
-                </>
-              )}
-            </button>
+              loading={loadingSuggestion === proj.id + '_tech'}
+              disabled={!proj.description}
+            />
           </div>
           <DebouncedInput
             type="text"
@@ -106,23 +97,13 @@ export function ProjectCard({
       <div className="grid gap-2">
         <div className="flex items-center justify-between gap-2">
           <label className="text-base font-semibold leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-3">Description</label>
-          <button
-            type="button"
+          <AIBadge 
+            label="AI Rewrite" 
+            type="rewrite"
             onClick={() => onRewriteDesc(proj.id, proj.description)}
-            disabled={loadingSuggestion === proj.id || !proj.description}
-            className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-primary/30 text-primary hover:bg-primary/10 h-10 px-4 text-base gap-1.5"
-            style={{ padding: '0.2rem 0.5rem', fontSize: '0.75rem' }}
-          >
-            {loadingSuggestion === proj.id ? (
-              <>
-                <Loader2 size={12} className="animate-spin" /> Rewriting...
-              </>
-            ) : (
-              <>
-                <Sparkles size={12} /> AI Rewrite
-              </>
-            )}
-          </button>
+            loading={loadingSuggestion === proj.id}
+            disabled={!proj.description}
+          />
         </div>
         <DebouncedTextarea
           value={proj.description}

@@ -13,6 +13,8 @@ model User {
   emailVerified DateTime?
   image         String?
   password      String?
+  phone         String?
+  address       String?
   credits       Int       @default(10)
   
   accounts      Account[]

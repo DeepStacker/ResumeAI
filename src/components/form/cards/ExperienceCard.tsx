@@ -1,6 +1,7 @@
 import React from 'react';
 import { Trash2, Plus, X, Loader2, Sparkles, ChevronUp, ChevronDown } from 'lucide-react';
 import { DebouncedInput } from '@/components/DebouncedInput';
+import { AIBadge } from '@/components/AIBadge';
 import { WorkEntry } from '@/types/resume';
 
 interface ExperienceCardProps {
@@ -168,42 +169,22 @@ export function ExperienceCard({
         >
           <Plus size={14} /> Add bullet
         </button>
-        <button
-          type="button"
-          onClick={() => onRewriteBullets(entry.id, entry)}
-          disabled={bulletLoading === entry.id}
-          className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-primary/30 text-primary hover:bg-primary/10 h-10 px-4 text-base gap-1.5"
-          style={{ marginLeft: '1rem', marginTop: '0.2rem' }}
-        >
-          {bulletLoading === entry.id ? (
-            <>
-              <Loader2 size={13} className="animate-spin" /> Rewriting...
-            </>
-          ) : (
-            <>
-              <Sparkles size={13} /> AI Rewrite (XYZ)
-            </>
+        <div className="flex flex-wrap gap-2 mt-2 ml-1">
+          <AIBadge 
+            label="Rewrite (XYZ)" 
+            type="rewrite"
+            onClick={() => onRewriteBullets(entry.id, entry)}
+            loading={bulletLoading === entry.id}
+          />
+          {entry.jobTitle && (
+            <AIBadge 
+              label="Generate Ideas" 
+              type="generate"
+              onClick={() => onGenerateRoleBullets(entry.id, entry.jobTitle)}
+              loading={bulletLoading === entry.id + '_generate'}
+            />
           )}
-        </button>
-        {entry.jobTitle && (
-          <button
-            type="button"
-            onClick={() => onGenerateRoleBullets(entry.id, entry.jobTitle)}
-            disabled={bulletLoading === entry.id + '_generate'}
-            className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-primary/30 text-primary hover:bg-primary/10 h-10 px-4 text-base gap-1.5"
-            style={{ marginLeft: '0.5rem', marginTop: '0.2rem' }}
-          >
-            {bulletLoading === entry.id + '_generate' ? (
-              <>
-                <Loader2 size={13} className="animate-spin" /> Thinking...
-              </>
-            ) : (
-              <>
-                <Sparkles size={13} /> Generate Ideas
-              </>
-            )}
-          </button>
-        )}
+        </div>
       </div>
     </div>
   );

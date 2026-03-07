@@ -1,6 +1,7 @@
 import React, { memo } from 'react';
 import { Target, ClipboardList } from 'lucide-react';
 import { DebouncedInput, DebouncedTextarea } from '@/components/DebouncedInput';
+import { AIBadge } from '@/components/AIBadge';
 
 interface Props {
   targetRole: string;
@@ -13,13 +14,18 @@ interface Props {
   onSkillsChange?: any;
   skillInput?: string;
   setSkillInput?: any;
+  handleSuggestTargetRoles?: () => void;
+  handleExtractKeywords?: () => void;
 }
 
 export const TargetAndSkillsSection = memo(function TargetAndSkillsSection({ 
   targetRole, 
   jobDescription, 
   updateField, 
-  SuggestionBubble 
+  SuggestionBubble,
+  loadingSuggestion,
+  handleSuggestTargetRoles,
+  handleExtractKeywords
 }: Props) {
 
   return (
@@ -27,6 +33,12 @@ export const TargetAndSkillsSection = memo(function TargetAndSkillsSection({
       <div className="grid gap-2">
         <div className="flex items-center justify-between gap-2">
           <label className="text-base font-semibold leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-2"><Target size={14} /> Target Job Title <span className="text-destructive font-normal">*</span></label>
+          <AIBadge 
+            label="AI Role Ideas" 
+            type="generate"
+            onClick={() => handleSuggestTargetRoles?.()}
+            loading={loadingSuggestion === 'targetRoleIdeation'}
+          />
         </div>
         <DebouncedInput
           type="text"
@@ -41,7 +53,17 @@ export const TargetAndSkillsSection = memo(function TargetAndSkillsSection({
       </div>
 
       <div className="grid gap-2">
-        <label className="text-base font-semibold leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-2"><ClipboardList size={14} /> Job Description <span className="text-[0.75rem] font-medium px-2 py-0.5 bg-muted rounded-full text-muted-foreground">optional</span></label>
+        <div className="flex items-center justify-between gap-2">
+          <label className="text-base font-semibold leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-2"><ClipboardList size={14} /> Job Description <span className="text-[0.75rem] font-medium px-2 py-0.5 bg-muted rounded-full text-muted-foreground">optional</span></label>
+          {jobDescription && (
+            <AIBadge 
+              label="AI Extract Skills" 
+              type="analyze"
+              onClick={() => handleExtractKeywords?.()}
+              loading={loadingSuggestion === 'extractKeywords'}
+            />
+          )}
+        </div>
         <DebouncedTextarea
           value={jobDescription || ''}
           onChangeValue={(val) => updateField('jobDescription', val)}
@@ -49,11 +71,13 @@ export const TargetAndSkillsSection = memo(function TargetAndSkillsSection({
           rows={10}
           placeholder="Paste the full job description here for maximum ATS optimization..."
         />
+        <SuggestionBubble field="extractKeywords" />
         <p className="text-[0.85rem] text-muted-foreground italic">Pasting a JD lets AI extract keywords and score your resume against the role.</p>
       </div>
     </>
   );
 }, (prevProps, nextProps) => {
   return prevProps.targetRole === nextProps.targetRole &&
-         prevProps.jobDescription === nextProps.jobDescription;
+         prevProps.jobDescription === nextProps.jobDescription &&
+         prevProps.loadingSuggestion === nextProps.loadingSuggestion;
 });

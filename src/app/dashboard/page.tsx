@@ -4,6 +4,7 @@ import React, { useEffect, useState, Suspense } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import Script from 'next/script';
 import { FileText, Clock, Trash2, Coins, ArrowRight, Loader2, Plus, X, Eye, Share2, Sparkles, Copy, Check } from 'lucide-react';
 import ResumePreview from '@/components/ResumePreview';
 import { Button } from '@/components/ui/button';
@@ -32,6 +33,7 @@ export default function DashboardPage() {
       </div>
     }>
       <DashboardContent />
+      <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
     </Suspense>
   );
 }
@@ -77,18 +79,76 @@ function DashboardContent() {
   const handlePurchase = async (packageId: string) => {
     setPurchaseLoading(packageId);
     try {
-      const res = await fetch('/api/stripe/checkout', {
+      // 1. Create Razorpay Order
+      const res = await fetch('/api/razorpay/create-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ packageId }),
       });
-      const { url, error } = await res.json();
-      if (url) window.location.href = url;
-      else alert(error || 'Failed to start checkout');
-    } catch {
-      alert('Network error');
+      const data = await res.json();
+
+      if (!data.id) {
+        alert(data.error || 'Failed to start checkout');
+        return;
+      }
+
+      // 2. Open Razorpay Widget
+      const options = {
+        key: data.keyId,
+        amount: data.amount,
+        currency: data.currency,
+        name: 'AI Resume Builder',
+        description: data.name,
+        order_id: data.id,
+        handler: async function (response: any) {
+             setPurchaseLoading(packageId); // Keep loading while verifying
+             try {
+                // 3. Verify Payment
+                const verifyRes = await fetch('/api/razorpay/verify', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        razorpay_order_id: response.razorpay_order_id,
+                        razorpay_payment_id: response.razorpay_payment_id,
+                        razorpay_signature: response.razorpay_signature,
+                        tokens: data.tokens // Send tokens so backend doesn't need to look it up 
+                    }),
+                });
+                
+                const verifyData = await verifyRes.json();
+                if (verifyData.success) {
+                    setShowPricing(false);
+                    fetchData(); // Refresh UI to show new credits and transaction
+                } else {
+                    alert('Payment Verification Failed: ' + verifyData.error);
+                }
+             } catch (err) {
+                 alert('Error verifying payment.');
+             } finally {
+                 setPurchaseLoading(null);
+             }
+        },
+        prefill: {
+            name: session?.user?.name || '',
+            email: session?.user?.email || '',
+        },
+        theme: {
+            color: '#0f172a', // primary tailwind standard
+        },
+      };
+
+      const razorpay = new (window as any).Razorpay(options);
+      razorpay.open();
+
+    } catch (err) {
+      alert('Network error while starting checkout.');
     } finally {
-      setPurchaseLoading(null);
+      // We don't unset loading here if the user is in the modal, 
+      // but Razorpay modal handles its own lifecycle.
+      // We will unset it if step 1 fails.
+      if (document.querySelector('.razorpay-container')) {
+         setPurchaseLoading(null); 
+      }
     }
   };
 
@@ -268,9 +328,9 @@ function DashboardContent() {
             </CardHeader>
             <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4 pb-8">
               {[
-                { id: 'starter', name: 'Starter', tokens: 50, price: '$5', desc: 'Perfect for one job' },
-                { id: 'professional', name: 'Pro', tokens: 200, price: '$15', desc: 'For active seekers', featured: true },
-                { id: 'elite', name: 'Elite', tokens: 500, price: '$30', desc: 'Max value' },
+                { id: 'starter', name: 'Starter', tokens: 50, price: '₹5', desc: 'Perfect for one job' },
+                { id: 'professional', name: 'Pro', tokens: 200, price: '₹15', desc: 'For active seekers', featured: true },
+                { id: 'elite', name: 'Elite', tokens: 500, price: '₹30', desc: 'Max value' },
               ].map(pkg => (
                 <div 
                   key={pkg.id} 

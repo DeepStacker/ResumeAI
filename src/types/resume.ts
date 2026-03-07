@@ -37,6 +37,7 @@ export interface EducationEntry {
     institution: string;
     year: string;
     gpa: string;
+    coursework?: string;
 }
 
 export type ResumeTemplate = 'professional' | 'modern' | 'minimal';
@@ -83,6 +84,7 @@ export const createEducationEntry = (): EducationEntry => ({
     institution: '',
     year: '',
     gpa: '',
+    coursework: '',
 });
 
 export const emptyResumeData: ResumeData = {

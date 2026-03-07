@@ -35,31 +35,39 @@ export default function Header() {
         </Link>
 
         {session && (
-          <nav className={`md:flex items-center gap-6 ${mobileOpen ? 'absolute top-16 left-0 w-full flex-col bg-background p-4 border-b shadow-lg md:static md:w-auto md:p-0 md:border-none md:shadow-none' : 'hidden'}`}>
-            {NAV_ITEMS.map(item => (
-              <Link key={item.href} href={item.href}
-                className={`text-base font-semibold transition-colors hover:text-primary ${pathname === item.href ? 'text-primary' : 'text-muted-foreground'}`}
-                onClick={() => setMobileOpen(false)}>
-                {item.label}
-              </Link>
-            ))}
+          <nav className={`md:flex items-center gap-6 ${mobileOpen ? 'absolute top-16 left-0 w-full flex-col bg-background/95 backdrop-blur-md p-6 border-b shadow-xl md:static md:w-auto md:p-0 md:bg-transparent md:border-none md:shadow-none' : 'hidden'}`}>
+            {NAV_ITEMS.map(item => {
+              const isActive = pathname === item.href;
+              return (
+                <Link key={item.href} href={item.href}
+                  className={`relative text-sm font-medium transition-all duration-200 py-1 ${isActive ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}`}
+                  onClick={() => setMobileOpen(false)}>
+                  {item.label}
+                  {isActive && (
+                    <span className="absolute -bottom-[21px] left-0 w-full h-[2px] bg-primary rounded-t-full hidden md:block" />
+                  )}
+                </Link>
+              );
+            })}
           </nav>
         )}
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           {session ? (
             <>
               <ThemeToggle />
+              <div className="h-5 w-px bg-border hidden md:block" />
               <UserMenu />
               <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setMobileOpen(!mobileOpen)}>
                 {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
               </Button>
             </>
           ) : (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               <ThemeToggle />
+              <div className="h-5 w-px bg-border" />
               <Link href="/auth/signin">
-                <Button size="sm" className="gap-2">
+                <Button size="sm" className="gap-2 h-9 px-4">
                   <LogIn className="h-4 w-4" /> Sign In
                 </Button>
               </Link>

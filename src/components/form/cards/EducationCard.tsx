@@ -1,6 +1,7 @@
 import React from 'react';
 import { Trash2, ChevronUp, ChevronDown } from 'lucide-react';
 import { DebouncedInput } from '@/components/DebouncedInput';
+import { AIBadge } from '@/components/AIBadge';
 import { EducationEntry } from '@/types/resume';
 
 interface EducationCardProps {
@@ -10,6 +11,8 @@ interface EducationCardProps {
   onRemove: (id: string) => void;
   onUpdate: (id: string, field: keyof EducationEntry | 'coursework', value: any) => void;
   onMove: (id: string, direction: 'up' | 'down') => void;
+  handleSuggestCoursework?: (eduId: string, degree: string) => void;
+  loadingSuggestion?: string | null;
 }
 
 export function EducationCard({
@@ -19,6 +22,8 @@ export function EducationCard({
   onRemove,
   onUpdate,
   onMove,
+  handleSuggestCoursework,
+  loadingSuggestion,
 }: EducationCardProps) {
   return (
     <div className="rounded-xl border bg-card text-card-foreground shadow-sm p-5 flex flex-col gap-4 relative group transition-colors hover:border-primary/50">
@@ -80,7 +85,16 @@ export function EducationCard({
       </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="grid gap-2">
-          <label className="text-base font-semibold leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-3">Year</label>
+          <label className="text-base font-semibold leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-3">
+            Year
+            {edu.year && (edu.year.length !== 4 || isNaN(Number(edu.year))) && (
+              <AIBadge 
+                label="AI Fix" 
+                onClick={() => onUpdate(edu.id, 'year', edu.year.replace(/\D/g, '').substring(0, 4))}
+                className="ml-auto"
+              />
+            )}
+          </label>
           <DebouncedInput
             type="text"
             value={edu.year}
@@ -102,10 +116,21 @@ export function EducationCard({
           />
         </div>
         <div className="grid gap-2">
-          <label className="text-base font-semibold leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-3">Coursework (optional)</label>
+          <div className="flex items-center justify-between gap-2">
+            <label className="text-base font-semibold leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-3">Coursework (optional)</label>
+            {handleSuggestCoursework && (
+              <AIBadge 
+                label="AI Suggest" 
+                type="generate"
+                onClick={() => handleSuggestCoursework(edu.id, edu.degree)}
+                loading={loadingSuggestion === edu.id + '_coursework'}
+                disabled={!edu.degree}
+              />
+            )}
+          </div>
           <DebouncedInput
             type="text"
-            value={(edu as any).coursework || ''}
+            value={edu.coursework || ''}
             onChangeValue={(val) => onUpdate(edu.id, 'coursework', val)}
             className="flex w-full rounded-md border border-input bg-background px-4 py-3 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
             placeholder="Data Structures, ML, Databases"

@@ -1,6 +1,7 @@
 import React, { useRef, memo } from 'react';
 import { User, Mail, Phone, MapPin, Linkedin, Github, Globe, Trash2, Sparkles } from 'lucide-react';
 import { DebouncedInput } from '@/components/DebouncedInput';
+import { AIBadge } from '@/components/AIBadge';
 import { ResumeData } from '@/types/resume';
 
 interface Props {
@@ -84,14 +85,12 @@ export const PersonalSection = memo(function PersonalSection({ data, template, u
         <div className="grid gap-2">
           <label className="text-base font-semibold leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-2">
             <Linkedin size={14} /> LinkedIn
-            {(data.linkedin && !data.linkedin.startsWith('http')) && (
-              <button 
-                type="button"
+            {data.linkedin && !data.linkedin.startsWith('http') && (
+              <AIBadge 
+                label="AI Fix" 
                 onClick={() => updatePersonal('linkedin', `https://${data.linkedin.replace(/^(http:\/\/|https:\/\/)/, '')}`)}
-                className="ml-auto text-[0.7rem] flex items-center gap-1 text-primary hover:underline font-normal"
-              >
-                <Sparkles size={10} /> Fix with AI
-              </button>
+                className="ml-auto"
+              />
             )}
           </label>
           <DebouncedInput
@@ -106,14 +105,12 @@ export const PersonalSection = memo(function PersonalSection({ data, template, u
         <div className="grid gap-2">
           <label className="text-base font-semibold leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-2">
             <Github size={14} /> GitHub
-            {(data.github && !data.github.startsWith('http')) && (
-              <button 
-                type="button"
+            {data.github && !data.github.startsWith('http') && (
+              <AIBadge 
+                label="AI Fix" 
                 onClick={() => updatePersonal('github', `https://${data.github.replace(/^(http:\/\/|https:\/\/)/, '')}`)}
-                className="ml-auto text-[0.7rem] flex items-center gap-1 text-primary hover:underline font-normal"
-              >
-                <Sparkles size={10} /> Fix with AI
-              </button>
+                className="ml-auto"
+              />
             )}
           </label>
           <DebouncedInput
@@ -130,14 +127,12 @@ export const PersonalSection = memo(function PersonalSection({ data, template, u
       <div className="grid gap-2">
         <label className="text-base font-semibold leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-2">
           <Globe size={14} /> Portfolio / Website
-          {(data.portfolio && !data.portfolio.startsWith('http')) && (
-            <button 
-              type="button"
+          {data.portfolio && !data.portfolio.startsWith('http') && (
+            <AIBadge 
+              label="AI Fix" 
               onClick={() => updatePersonal('portfolio', `https://${data.portfolio.replace(/^(http:\/\/|https:\/\/)/, '')}`)}
-              className="ml-auto text-[0.7rem] flex items-center gap-1 text-primary hover:underline font-normal"
-            >
-              <Sparkles size={10} /> Fix with AI
-            </button>
+              className="ml-auto"
+            />
           )}
         </label>
         <DebouncedInput

@@ -129,6 +129,9 @@ export default function ResumeForm({ onSubmit, isLoading }: ResumeFormProps) {
     } else if (field === 'targetRoleIdeation') {
       applyTargetRoleSuggestion();
       return; // custom handler
+    } else if (field === 'extractKeywords') {
+      const newSkills = s.split(',').map(sk => sk.trim()).filter(Boolean);
+      newSkills.forEach(sk => store.addChip('skills', sk));
     }
     dismissSuggestion(field);
   };
@@ -292,6 +295,23 @@ export default function ResumeForm({ onSubmit, isLoading }: ResumeFormProps) {
     setLoadingSuggestion(null);
   };
 
+  const handleSuggestCoursework = async (eduId: string, degree: string) => {
+    if (!degree) return;
+    setLoadingSuggestion(eduId + '_coursework');
+    try {
+      const res = await fetch('/api/suggest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ field: 'courseworkFromDegree', value: degree }),
+      });
+      const result = await res.json();
+      if (result.suggestion) {
+         store.updateEducation(eduId, 'coursework', result.suggestion);
+      }
+    } catch { /* silent */ }
+    setLoadingSuggestion(null);
+  };
+
   const handleSuggestTargetRoles = async () => {
     setLoadingSuggestion('targetRoleIdeation');
     try {
@@ -304,6 +324,23 @@ export default function ResumeForm({ onSubmit, isLoading }: ResumeFormProps) {
       const result = await res.json();
       if (result.suggestion) {
         setSuggestions(p => ({ ...p, targetRoleIdeation: result.suggestion }));
+      }
+    } catch { /* silent */ }
+    setLoadingSuggestion(null);
+  };
+
+  const handleExtractKeywords = async () => {
+    if (!data.jobDescription) return;
+    setLoadingSuggestion('extractKeywords');
+    try {
+      const res = await fetch('/api/suggest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ field: 'extractKeywords', value: data.jobDescription }),
+      });
+      const result = await res.json();
+      if (result.suggestion) {
+        setSuggestions(p => ({ ...p, extractKeywords: result.suggestion }));
       }
     } catch { /* silent */ }
     setLoadingSuggestion(null);
@@ -672,9 +709,18 @@ export default function ResumeForm({ onSubmit, isLoading }: ResumeFormProps) {
     if (!suggestions[field]) return null;
     return (
       <div className="ai-suggestion-bubble animate-fade-in">
-        <div className="ai-suggestion-header"><Sparkles size={14} /><span>AI Suggestion</span><button onClick={() => dismissSuggestion(field)} className="suggestion-dismiss" type="button"><X size={12} /></button></div>
+        <div className="ai-suggestion-header">
+          <Sparkles size={14} />
+          <span>{field === 'extractKeywords' ? 'Extracted Keywords' : 'AI Suggestion'}</span>
+          <button onClick={() => dismissSuggestion(field)} className="suggestion-dismiss" type="button"><X size={12} /></button>
+        </div>
         <p className="ai-suggestion-text">{suggestions[field]}</p>
-        <button onClick={() => applySuggestion(field)} className="suggestion-apply-btn" type="button"><Check size={14} /> Apply</button>
+        <div className="flex gap-2">
+          <button onClick={() => applySuggestion(field)} className="suggestion-apply-btn" type="button"><Check size={14} /> {field === 'extractKeywords' ? 'Add to Skills' : 'Apply'}</button>
+          {field === 'extractKeywords' && (
+            <p className="text-[0.65rem] text-muted-foreground self-center italic">These will be added to your skills list.</p>
+          )}
+        </div>
       </div>
     );
   };
@@ -754,6 +800,8 @@ export default function ResumeForm({ onSubmit, isLoading }: ResumeFormProps) {
               SuggestionBubble={SuggestionBubble}
               skillInput={skillInput}
               setSkillInput={setSkillInput}
+              handleSuggestTargetRoles={handleSuggestTargetRoles}
+              handleExtractKeywords={handleExtractKeywords}
             />
           </div>
         )}
@@ -830,6 +878,8 @@ export default function ResumeForm({ onSubmit, isLoading }: ResumeFormProps) {
             moveEducation={store.moveEducation}
             addEducation={store.addEducation}
             removeEducation={store.removeEducation}
+            handleSuggestCoursework={handleSuggestCoursework}
+            loadingSuggestion={loadingSuggestion}
           />
         )}
 

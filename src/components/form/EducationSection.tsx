@@ -9,6 +9,8 @@ interface Props {
   moveEducation: any;
   addEducation: () => void;
   removeEducation: (id: string) => void;
+  handleSuggestCoursework?: (eduId: string, degree: string) => void;
+  loadingSuggestion?: string | null;
 }
 
 export const EducationSection = memo(function EducationSection({
@@ -16,7 +18,9 @@ export const EducationSection = memo(function EducationSection({
   updateEducation,
   moveEducation,
   addEducation,
-  removeEducation
+  removeEducation,
+  handleSuggestCoursework,
+  loadingSuggestion,
 }: Props) {
 
   return (
@@ -36,6 +40,8 @@ export const EducationSection = memo(function EducationSection({
           onRemove={removeEducation}
           onMove={moveEducation}
           onUpdate={updateEducation as any}
+          handleSuggestCoursework={handleSuggestCoursework}
+          loadingSuggestion={loadingSuggestion}
         />
       ))}
       <button 
@@ -48,5 +54,6 @@ export const EducationSection = memo(function EducationSection({
     </div>
   );
 }, (prevProps, nextProps) => {
-  return JSON.stringify(prevProps.education) === JSON.stringify(nextProps.education);
+  return JSON.stringify(prevProps.education) === JSON.stringify(nextProps.education) &&
+         prevProps.loadingSuggestion === nextProps.loadingSuggestion;
 });
