@@ -2,6 +2,7 @@ import React, { memo } from 'react';
 import { Plus, Globe } from 'lucide-react';
 import { ProjectEntry } from '@/types/resume';
 import { ProjectCard } from './cards/ProjectCard';
+import { Accordion } from '@/components/ui/accordion';
 
 interface Props {
   handleRewriteProjectDesc: (id: string, desc: string) => void;
@@ -33,20 +34,24 @@ export const ProjectsSection = memo(function ProjectsSection({
           <p>No projects yet. Add your notable projects to stand out.</p>
         </div>
       )}
-      {projects.map((proj, idx) => (
-        <ProjectCard
-          key={proj.id}
-          proj={proj}
-          idx={idx}
-          totalEntries={projects.length}
-          loadingSuggestion={loadingSuggestion}
-          onRemove={removeProject}
-          onUpdate={updateProject}
-          onMove={moveProject}
-          onRewriteDesc={handleRewriteProjectDesc}
-          onSuggestTechStack={handleSuggestTechStack}
-        />
-      ))}
+      {projects.length > 0 && (
+        <Accordion type="single" collapsible className="w-full space-y-4">
+          {projects.map((proj, idx) => (
+            <ProjectCard
+              key={proj.id}
+              proj={proj}
+              idx={idx}
+              totalEntries={projects.length}
+              loadingSuggestion={loadingSuggestion}
+              onRemove={removeProject}
+              onUpdate={updateProject}
+              onMove={moveProject}
+              onRewriteDesc={handleRewriteProjectDesc}
+              onSuggestTechStack={handleSuggestTechStack}
+            />
+          ))}
+        </Accordion>
+      )}
       <button 
         type="button" 
         onClick={addProject} 

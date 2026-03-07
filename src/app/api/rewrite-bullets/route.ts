@@ -4,6 +4,8 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { deductCredits, checkCredits } from '@/lib/credits';
 import { z } from 'zod';
+import { redis } from '@/lib/redis';
+import crypto from 'crypto';
 
 const bulletSchema = z.array(z.string());
 
@@ -45,6 +47,18 @@ Original Bullets:
 ${entry.bullets.join('\n')}
 `;
 
+        const promptHash = crypto.createHash('md5').update(prompt).digest('hex');
+        const cacheKey = `ai:rewrite:${promptHash}`;
+
+        // LAYER 3 CACHE: Check Redis API cache for semantic hit
+        const cachedData = await redis.get(cacheKey);
+        if (cachedData) {
+            console.log(`[CACHE HIT] Redis intercepted rewrite-bullets request: ${cacheKey}`);
+            // We still deduct credits for the feature usage, but we save on OpenAI bounds.
+            await deductCredits(userId, 'REWRITE_BULLETS', 'AI Bullet Rewriting (Cached Edge)');
+            return NextResponse.json({ bullets: typeof cachedData === 'string' ? JSON.parse(cachedData) : cachedData });
+        }
+
         const aiResult = await callAI({
             messages: [
                 { role: 'system', content: 'You are a concise AI assistant. You MUST respond with a valid JSON array of strings containing the rewritten bullets. Example: ["bullet 1...", "bullet 2..."]. Do not wrap the JSON in markdown blocks or include any other text.' },
@@ -56,6 +70,10 @@ ${entry.bullets.join('\n')}
 
         try {
             const parsedArray = bulletSchema.parse(JSON.parse(aiResult.content.trim()));
+
+            // Cache the successful OpenAI result in Redis for 7 days
+            await redis.set(cacheKey, JSON.stringify(parsedArray), { ex: 604800 });
+
             // SUCCESS — now deduct credits
             await deductCredits(userId, 'REWRITE_BULLETS', 'AI Bullet Rewriting');
             return NextResponse.json({ bullets: parsedArray });

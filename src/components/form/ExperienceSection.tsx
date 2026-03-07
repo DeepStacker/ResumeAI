@@ -2,6 +2,7 @@ import React, { memo } from 'react';
 import { Plus, Briefcase } from 'lucide-react';
 import { WorkEntry } from '@/types/resume';
 import { ExperienceCard } from './cards/ExperienceCard';
+import { Accordion } from '@/components/ui/accordion';
 
 interface Props {
   handleRewriteBullets: (id: string, entry: WorkEntry) => void;
@@ -51,23 +52,27 @@ export const ExperienceSection = memo(function ExperienceSection({
           <p>No work experience added yet. List your relevant roles to show your career progression.</p>
         </div>
       )}
-      {experience.map((entry, idx) => (
-        <ExperienceCard
-          key={entry.id}
-          entry={entry}
-          idx={idx}
-          totalEntries={experience.length}
-          bulletLoading={bulletLoading}
-          onRemove={removeWorkEntry}
-          onUpdate={updateWork}
-          onMove={moveWork}
-          onUpdateBullet={updateBullet}
-          onRemoveBullet={removeBullet}
-          onAddBullet={addBullet}
-          onRewriteBullets={handleRewriteBullets}
-          onGenerateRoleBullets={handleGenerateRoleBullets}
-        />
-      ))}
+      {experience.length > 0 && (
+        <Accordion type="single" collapsible className="w-full space-y-4">
+          {experience.map((entry, idx) => (
+            <ExperienceCard
+              key={entry.id}
+              entry={entry}
+              idx={idx}
+              totalEntries={experience.length}
+              bulletLoading={bulletLoading}
+              onRemove={removeWorkEntry}
+              onUpdate={updateWork}
+              onMove={moveWork}
+              onUpdateBullet={updateBullet}
+              onRemoveBullet={removeBullet}
+              onAddBullet={addBullet}
+              onRewriteBullets={handleRewriteBullets}
+              onGenerateRoleBullets={handleGenerateRoleBullets}
+            />
+          ))}
+        </Accordion>
+      )}
       <button 
         type="button" 
         onClick={addWorkEntry} 

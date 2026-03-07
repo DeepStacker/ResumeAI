@@ -5,8 +5,14 @@ import { useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Script from 'next/script';
+import useSWR from 'swr';
 import { FileText, Clock, Trash2, Coins, ArrowRight, Loader2, Plus, X, Eye, Share2, Sparkles, Copy, Check } from 'lucide-react';
-import ResumePreview from '@/components/ResumePreview';
+import dynamic from 'next/dynamic';
+
+const ResumePreview = dynamic(() => import('@/components/ResumePreview'), {
+  ssr: false,
+  loading: () => <div className="flex h-full items-center justify-center p-12"><Loader2 className="h-8 w-8 animate-spin text-primary opacity-50" /></div>
+});
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -38,14 +44,30 @@ export default function DashboardPage() {
   );
 }
 
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
+
 function DashboardContent() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [resumes, setResumes] = useState<ResumeItem[]>([]);
-  const [transactions, setTransactions] = useState<TransactionItem[]>([]);
-  const [credits, setCredits] = useState(0);
-  const [loading, setLoading] = useState(true);
+
+  // Layer 1 Caching: useSWR hydrates immediately from cache while actively revalidating in the background
+  const { data: resumesData, error: resumesError, mutate: mutateResumes } = useSWR(
+    status === 'authenticated' ? '/api/resumes' : null, 
+    fetcher,
+    { revalidateOnFocus: true }
+  );
+
+  const { data: creditsData, error: creditsError, mutate: mutateCredits } = useSWR(
+    status === 'authenticated' ? '/api/credits' : null, 
+    fetcher
+  );
+
+  const resumes: ResumeItem[] = resumesData?.resumes || [];
+  const credits: number = creditsData?.balance || 0;
+  const transactions: TransactionItem[] = creditsData?.transactions || [];
+
+  const isLoadingData = (!resumesData && !resumesError) || (!creditsData && !creditsError);
 
   useEffect(() => {
     if (searchParams?.get('purchase') === 'true') {
@@ -118,7 +140,7 @@ function DashboardContent() {
                 const verifyData = await verifyRes.json();
                 if (verifyData.success) {
                     setShowPricing(false);
-                    fetchData(); // Refresh UI to show new credits and transaction
+                    mutateCredits(); // SWR Cache invalidation to refresh balance immediately
                 } else {
                     alert('Payment Verification Failed: ' + verifyData.error);
                 }
@@ -155,34 +177,12 @@ function DashboardContent() {
   useEffect(() => {
     if (status === 'unauthenticated') {
       router.push('/auth/signin');
-      return;
-    }
-    if (status === 'authenticated') {
-      fetchData();
     }
   }, [status, router]);
 
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      const [resumeRes, creditRes] = await Promise.all([
-        fetch('/api/resumes'),
-        fetch('/api/credits'),
-      ]);
-      if (resumeRes.ok) {
-        const data = await resumeRes.json();
-        setResumes(data.resumes || []);
-      }
-      if (creditRes.ok) {
-        const data = await creditRes.json();
-        setCredits(data.balance || 0);
-        setTransactions(data.transactions || []);
-      }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
+  const mutateAll = () => {
+    mutateResumes();
+    mutateCredits();
   };
 
   const handleDelete = (id: string, e: React.MouseEvent) => {
@@ -197,7 +197,7 @@ function DashboardContent() {
     try {
       const res = await fetch(`/api/resumes?id=${deleteConfirmId}`, { method: 'DELETE' });
       if (res.ok) {
-        setResumes(prev => prev.filter(r => r.id !== deleteConfirmId));
+        mutateResumes(); // Tell SWR to refresh the resumes list instantly
         setDeleteConfirmId(null);
       } else {
         alert('Failed to delete resume.');
@@ -251,7 +251,8 @@ function DashboardContent() {
       if (res.ok && data.coverLetter) {
         setClResult(data.coverLetter);
         setClResumeId(null); 
-        fetchData(); 
+        mutateResumes(); // Update UI if credits deduction occurred (wait, credits also needs mutate)
+        mutateCredits();
       } else {
         alert(data.error || 'Failed to generate cover letter.');
       }
@@ -262,7 +263,7 @@ function DashboardContent() {
     }
   };
 
-  if (status === 'loading' || loading) {
+  if (status === 'loading' || (status === 'authenticated' && isLoadingData)) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />

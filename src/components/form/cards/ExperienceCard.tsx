@@ -1,8 +1,9 @@
 import React from 'react';
-import { Trash2, Plus, X, Loader2, Sparkles, ChevronUp, ChevronDown } from 'lucide-react';
+import { Trash2, Plus, X, Loader2, Sparkles, ChevronUp, ChevronDown, Building2 } from 'lucide-react';
 import { DebouncedInput } from '@/components/DebouncedInput';
 import { AIBadge } from '@/components/AIBadge';
 import { WorkEntry } from '@/types/resume';
+import { AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
 
 interface ExperienceCardProps {
   entry: WorkEntry;
@@ -34,32 +35,40 @@ export function ExperienceCard({
   onGenerateRoleBullets,
 }: ExperienceCardProps) {
   return (
-    <div className="rounded-xl border bg-card text-card-foreground shadow-sm p-5 flex flex-col gap-4 relative group transition-colors hover:border-primary/50">
-      <div className="rounded-xl border bg-card text-card-foreground shadow-sm p-5 flex flex-col gap-4 relative group transition-colors hover:border-primary/50-header">
-        <span className="rounded-xl border bg-card text-card-foreground shadow-sm p-5 flex flex-col gap-4 relative group transition-colors hover:border-primary/50-number">#{idx + 1}</span>
-        <div className="flex gap-2">
+    <AccordionItem value={entry.id} className="rounded-xl border bg-card text-card-foreground shadow-sm group transition-colors hover:border-primary/50 overflow-hidden">
+      <div className="flex items-center justify-between pr-4 bg-muted/20">
+        <AccordionTrigger className="hover:no-underline hover:bg-muted/50 px-5 py-4 w-full justify-start gap-4">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary shrink-0">
+            <Building2 size={18} />
+          </div>
+          <div className="flex flex-col items-start gap-1 text-left min-w-0">
+            <span className="font-semibold truncate w-full">{entry.jobTitle || 'New Role'}</span>
+            <span className="text-sm text-muted-foreground font-normal truncate w-full">{entry.company || 'Company Name'}</span>
+          </div>
+        </AccordionTrigger>
+        <div className="flex gap-1 ml-4 shrink-0">
           {totalEntries > 1 && (
             <>
               <button
                 type="button"
-                onClick={() => onMove(entry.id, 'up')}
+                onClick={(e) => { e.stopPropagation(); onMove(entry.id, 'up'); }}
                 disabled={idx === 0}
-                className="h-10 w-10 inline-flex items-center justify-center rounded-md text-base font-semibold transition-colors hover:bg-accent text-muted-foreground opacity-50 group-hover:opacity-100 disabled:opacity-30"
+                className="h-9 w-9 inline-flex items-center justify-center rounded-md text-base font-semibold transition-colors hover:bg-accent text-muted-foreground opacity-50 group-hover:opacity-100 disabled:opacity-30"
               >
                 <ChevronUp size={16} />
               </button>
               <button
                 type="button"
-                onClick={() => onMove(entry.id, 'down')}
+                onClick={(e) => { e.stopPropagation(); onMove(entry.id, 'down'); }}
                 disabled={idx === totalEntries - 1}
-                className="h-10 w-10 inline-flex items-center justify-center rounded-md text-base font-semibold transition-colors hover:bg-accent text-muted-foreground opacity-50 group-hover:opacity-100 disabled:opacity-30"
+                className="h-9 w-9 inline-flex items-center justify-center rounded-md text-base font-semibold transition-colors hover:bg-accent text-muted-foreground opacity-50 group-hover:opacity-100 disabled:opacity-30"
               >
                 <ChevronDown size={16} />
               </button>
               <button
                 type="button"
-                onClick={() => onRemove(entry.id)}
-                className="h-10 w-10 text-base inline-flex items-center justify-center rounded-md text-base font-semibold transition-colors hover:bg-destructive/10 hover:text-destructive text-muted-foreground opacity-50 group-hover:opacity-100"
+                onClick={(e) => { e.stopPropagation(); onRemove(entry.id); }}
+                className="h-9 w-9 text-base inline-flex items-center justify-center rounded-md text-base font-semibold transition-colors hover:bg-destructive/10 hover:text-destructive text-muted-foreground opacity-50 group-hover:opacity-100"
               >
                 <Trash2 size={14} />
               </button>
@@ -67,6 +76,7 @@ export function ExperienceCard({
           )}
         </div>
       </div>
+      <AccordionContent className="p-5 pt-4 flex flex-col gap-6 border-t bg-card">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="grid gap-2">
           <label className="text-base font-semibold leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-3">
@@ -185,7 +195,8 @@ export function ExperienceCard({
             />
           )}
         </div>
-      </div>
-    </div>
+        </div>
+      </AccordionContent>
+    </AccordionItem>
   );
 }

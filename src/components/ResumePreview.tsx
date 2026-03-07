@@ -7,6 +7,18 @@ import { ResumeData } from '@/types/resume';
 import { ProfessionalTemplate } from './templates/ProfessionalTemplate';
 import { ModernTemplate } from './templates/ModernTemplate';
 import { MinimalTemplate } from './templates/MinimalTemplate';
+import { ExecutiveTemplate } from './templates/ExecutiveTemplate';
+import { TechTemplate } from './templates/TechTemplate';
+import { ClassicTemplate } from './templates/ClassicTemplate';
+import { FinanceTemplate } from './templates/FinanceTemplate';
+import { CreativeTemplate } from './templates/CreativeTemplate';
+import { StartupTemplate } from './templates/StartupTemplate';
+import { BoldTemplate } from './templates/BoldTemplate';
+import { DesignerTemplate } from './templates/DesignerTemplate';
+import { AcademicTemplate } from './templates/AcademicTemplate';
+import { ElegantTemplate } from './templates/ElegantTemplate';
+import { CompactTemplate } from './templates/CompactTemplate';
+import { DataScientistTemplate } from './templates/DataScientistTemplate';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useReactToPrint } from 'react-to-print';
@@ -101,6 +113,18 @@ export default function ResumePreview({ resumeMarkdown, resumeData, onReset, job
     switch (activeData?.template || 'professional') {
       case 'modern': return <ModernTemplate data={activeData} />;
       case 'minimal': return <MinimalTemplate data={activeData} />;
+      case 'executive': return <ExecutiveTemplate data={activeData} />;
+      case 'tech': return <TechTemplate data={activeData} />;
+      case 'classic': return <ClassicTemplate data={activeData} />;
+      case 'finance': return <FinanceTemplate data={activeData} />;
+      case 'creative': return <CreativeTemplate data={activeData} />;
+      case 'startup': return <StartupTemplate data={activeData} />;
+      case 'bold': return <BoldTemplate data={activeData} />;
+      case 'designer': return <DesignerTemplate data={activeData} />;
+      case 'academic': return <AcademicTemplate data={activeData} />;
+      case 'elegant': return <ElegantTemplate data={activeData} />;
+      case 'compact': return <CompactTemplate data={activeData} />;
+      case 'datascientist': return <DataScientistTemplate data={activeData} />;
       case 'professional':
       default: return <ProfessionalTemplate data={activeData} />;
     }

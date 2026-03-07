@@ -2,6 +2,29 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
+import { unstable_cache, revalidateTag } from 'next/cache';
+
+const getCachedResumes = (userId: string) => unstable_cache(
+    async () => {
+        return await prisma.resume.findMany({
+            where: { userId },
+            orderBy: { createdAt: 'desc' },
+            select: { id: true, title: true, createdAt: true, updatedAt: true },
+        });
+    },
+    [`resumes-${userId}`],
+    { tags: [`resumes-${userId}`], revalidate: 3600 }
+)();
+
+const getCachedSingleResume = (id: string, userId: string) => unstable_cache(
+    async () => {
+        return await prisma.resume.findFirst({
+            where: { id, userId }
+        });
+    },
+    [`resume-${id}-${userId}`],
+    { tags: [`resumes-${userId}`, `resume-${id}`], revalidate: 3600 }
+)();
 
 // GET: list user's resumes or a single resume
 export async function GET(req: Request) {
@@ -13,18 +36,12 @@ export async function GET(req: Request) {
     const id = searchParams.get('id');
 
     if (id) {
-        const resume = await prisma.resume.findFirst({
-            where: { id, userId }
-        });
+        const resume = await getCachedSingleResume(id, userId);
         if (!resume) return NextResponse.json({ error: 'Not found' }, { status: 404 });
         return NextResponse.json({ resume });
     }
 
-    const resumes = await prisma.resume.findMany({
-        where: { userId },
-        orderBy: { createdAt: 'desc' },
-        select: { id: true, title: true, createdAt: true, updatedAt: true },
-    });
+    const resumes = await getCachedResumes(userId);
 
     return NextResponse.json({ resumes });
 }
@@ -46,6 +63,8 @@ export async function POST(req: Request) {
         },
     });
 
+    revalidateTag(`resumes-${userId}`, {});
+
     return NextResponse.json({ resume });
 }
 
@@ -65,6 +84,8 @@ export async function DELETE(req: Request) {
     if (!resume) return NextResponse.json({ error: 'Resume not found' }, { status: 404 });
 
     await prisma.resume.delete({ where: { id } });
+    revalidateTag(`resumes-${userId}`, {});
+    revalidateTag(`resume-${id}`, {});
     return NextResponse.json({ success: true });
 }
 
@@ -90,6 +111,9 @@ export async function PUT(req: Request) {
             markdown: markdown !== undefined ? markdown : existing.markdown,
         },
     });
+
+    revalidateTag(`resumes-${userId}`, {});
+    revalidateTag(`resume-${id}`, {});
 
     return NextResponse.json({ resume: updated });
 }

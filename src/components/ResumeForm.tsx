@@ -4,7 +4,7 @@ import React, { useState, useCallback, useRef } from 'react';
 import {
   Send, Upload, Sparkles, ChevronRight, ChevronLeft, Check, Loader2, RefreshCcw,
   User, Target, Code, Briefcase, Globe, GraduationCap, X, Plus, Award, Languages, FileText,
-  BarChart3, AlertTriangle, CheckCircle2, Shield, Zap, ChevronDown, ChevronUp
+  BarChart3, AlertTriangle, CheckCircle2, Shield, Zap, ChevronDown, ChevronUp, Lightbulb, Info
 } from 'lucide-react';
 import { ResumeData, ResumeTemplate, WorkEntry } from '@/types/resume';
 import { useResumeStore } from '@/store/useResumeStore';
@@ -23,21 +23,90 @@ interface ResumeFormProps {
 }
 
 const STEPS = [
-  { id: 0, title: 'Start',       icon: Upload,         desc: 'Upload existing resume or start fresh' },
-  { id: 1, title: 'Personal',    icon: User,           desc: 'Contact details and online profiles' },
-  { id: 2, title: 'Target & JD', icon: Target,         desc: 'Target role and optional job description for ATS' },
-  { id: 3, title: 'Skills',      icon: Code,           desc: 'Technical and soft skills' },
-  { id: 4, title: 'Experience',  icon: Briefcase,      desc: 'Work history with achievement bullets' },
-  { id: 5, title: 'Projects',    icon: Globe,          desc: 'Notable projects and contributions' },
-  { id: 6, title: 'Education',   icon: GraduationCap,  desc: 'Degrees, certifications, and courses' },
-  { id: 7, title: 'Review',      icon: Send,           desc: 'Summary, extras, template, and generate' },
+  { id: 0, title: 'Start',             icon: Upload,         desc: 'Upload or start fresh' },
+  { id: 1, title: 'Personal',          icon: User,           desc: 'Contact & appearance' },
+  { id: 2, title: 'Target & Skills',   icon: Target,         desc: 'Role, JD & skills' },
+  { id: 3, title: 'Experience',        icon: Briefcase,      desc: 'Work history' },
+  { id: 4, title: 'Projects & Edu',    icon: GraduationCap,  desc: 'Projects & degrees' },
+  { id: 5, title: 'Review',            icon: Send,           desc: 'Finalize & generate' },
 ];
+
+// AI-powered contextual tips per step
+const STEP_AI_TIPS: Record<number, { icon: React.ElementType; tip: string; action?: string }> = {
+  1: { icon: Sparkles, tip: 'AI will auto-detect your profile from uploaded data. Add LinkedIn/GitHub to boost ATS score by 12%.', action: 'Pro tip' },
+  2: { icon: Lightbulb, tip: 'Paste a job description and AI will extract the top keywords to supercharge your skills list.', action: 'AI-powered' },
+  3: { icon: Zap, tip: 'Use "AI Rewrite" on each role to transform weak bullets into metric-driven impact statements.', action: 'Smart bullets' },
+  4: { icon: Sparkles, tip: 'AI can suggest relevant coursework and tech stacks automatically. Click the sparkle icons!', action: 'Auto-suggest' },
+  5: { icon: Shield, tip: 'Run the free Readiness Check to get an ATS score and auto-fix weak sections with one click.', action: 'Free analysis' },
+};
 
 const TEMPLATES: { id: ResumeTemplate; name: string; desc: string }[] = [
   { id: 'professional', name: 'Professional', desc: 'Clean, traditional corporate layout' },
   { id: 'modern',       name: 'Modern',       desc: 'Contemporary with accent sections' },
   { id: 'minimal',      name: 'Minimal',      desc: 'Simple, highly ATS-parseable' },
+  { id: 'executive',    name: 'Executive',    desc: 'Bold branding for leadership roles' },
+  { id: 'creative',     name: 'Creative',     desc: 'Unique structure for design fields' },
+  { id: 'tech',         name: 'Tech',         desc: 'Optimized for developer skill grids' },
+  { id: 'startup',      name: 'Startup',      desc: 'Dynamic, high-impact aesthetic' },
+  { id: 'academic',     name: 'Academic',     desc: 'CV style for research and education' },
+  { id: 'classic',      name: 'Classic',      desc: 'Tried-and-true serif typography' },
+  { id: 'bold',         name: 'Bold',         desc: 'Striking headers with stark contrast' },
+  { id: 'elegant',      name: 'Elegant',      desc: 'Sophisticated spacing and geometry' },
+  { id: 'compact',      name: 'Compact',      desc: 'Dense data layout for 1-page limits' },
+  { id: 'datascientist',name: 'Data Science', desc: 'Emphasis on tools & certifications' },
+  { id: 'designer',     name: 'Designer',     desc: 'Showcase portfolios & visuals' },
+  { id: 'finance',      name: 'Finance',      desc: 'Strictly formatted for banking roles' },
 ];
+
+// Auto-trigger: extract skills from JD when user arrives at step 2 with no skills
+function AutoTriggerSkillExtract({ jd, fetchSuggestion }: { jd: string; fetchSuggestion: (field: string, value: string) => void }) {
+  const triggered = useRef(false);
+  React.useEffect(() => {
+    if (!triggered.current && jd.length > 30) {
+      triggered.current = true;
+      setTimeout(() => fetchSuggestion('skills', `Extract the most important technical skills and keywords from this JD: ${jd.substring(0, 500)}`), 600);
+    }
+  }, [jd, fetchSuggestion]);
+  return null;
+}
+
+// Auto-trigger: readiness review when user arrives at Review step
+function AutoTriggerReview({ handleReviewReadiness }: { handleReviewReadiness: () => void }) {
+  const triggered = useRef(false);
+  React.useEffect(() => {
+    if (!triggered.current) {
+      triggered.current = true;
+      setTimeout(() => handleReviewReadiness(), 800);
+    }
+  }, [handleReviewReadiness]);
+  return null;
+}
+
+// --- AI Expert Advisor Logic ---
+const AI_ADVISOR_DATA: Record<number, string[]> = {
+  1: ["Add a professional headshot to creative templates to increase engagement.", "Include your GitHub if applying for tech roles; it's a huge trust builder.", "Pro-tip: Use a professional email like firstname.lastname@email.com."],
+  2: ["ATS systems filter by mandatory skills first. Ensure yours are present.", "Specific titles like 'Senior Frontend Engineer' score higher than 'Lead Developer'.", "If you have the JD, use 'AI Extract' to catch 100% of hidden keywords."],
+  3: ["Action verbs like 'Spearheaded' or 'Orchestrated' outperform 'Managed'.", "Numbers talk. 'Grew revenue by 20%' is better than 'Increased revenue'.", "Keep each bullet under 2 lines for maximum readability."],
+  4: ["Open source contributions show passion. Highlight your top 2 projects.", "Include relevant coursework if you're a recent grad or switching fields.", "List the tech stack for every project to double your keyword hits."],
+  5: ["An 80+ score usually guarantees a human will read your resume.", "Try the 'Modern' template for tech and 'Professional' for corporate.", "Don't forget to generate a tailored cover letter for this specific role."],
+  0: ["Upload your old resume to save 10+ minutes of manual entry.", "Starting from scratch? Use 'Magic Baseline' to get an AI-powered headstart.", "The better your starting data, the better AI can optimize your results."]
+};
+
+// --- Live ATS Score Logic (Simplified but deterministic) ---
+const calculateLiveScore = (data: ResumeData) => {
+  let score = 20; // Baseline
+  if (data.personal.fullName) score += 5;
+  if (data.personal.email && data.personal.phone) score += 5;
+  if (data.personal.linkedin || data.personal.github) score += 5;
+  if (data.targetRole) score += 10;
+  if (data.skills.length > 5) score += 10;
+  if (data.skills.length > 10) score += 5;
+  if (data.experience.length > 0) score += 10;
+  if (data.experience.some(e => e.bullets.length >= 3)) score += 10;
+  if (data.projects.length > 0) score += 10;
+  if (data.education.length > 0) score += 10;
+  return Math.min(score, 100);
+};
 
 export default function ResumeForm({ onSubmit, isLoading }: ResumeFormProps) {
   const store = useResumeStore();
@@ -65,12 +134,28 @@ export default function ResumeForm({ onSubmit, isLoading }: ResumeFormProps) {
   const [reviewLoading, setReviewLoading] = useState(false);
   const [fixingType, setFixingType] = useState<string | null>(null);
   const [showBulletDetails, setShowBulletDetails] = useState(false);
+  const [showScoreDetails, setShowScoreDetails] = useState(false);
 
   // Upload
   const [isUploading, setIsUploading] = useState(false);
   const [uploadMsg, setUploadMsg] = useState<string | null>(null);
   const [uploadedFile, setUploadedFile] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  // --- AI Suggestions ---
+  const fetchSuggestion = async (field: string, value: string) => {
+    setLoadingSuggestion(field);
+    try {
+      const res = await fetch('/api/suggest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ field, value, target_role: data.targetRole }),
+      });
+      const result = await res.json();
+      if (result.suggestion) setSuggestions(p => ({ ...p, [field]: result.suggestion }));
+    } catch { /* silent */ }
+    setLoadingSuggestion(null);
+  };
 
   // Skill input local states
   const [skillInput, setSkillInput] = useState('');
@@ -86,18 +171,48 @@ export default function ResumeForm({ onSubmit, isLoading }: ResumeFormProps) {
     setInput('');
   };
 
-  // --- AI Suggestions ---
-  const fetchSuggestion = async (field: string, value: string) => {
-    setLoadingSuggestion(field);
+  // --- AI Expert Advisor ---
+  const [advisorTipIdx, setAdvisorTipIdx] = useState(0);
+  React.useEffect(() => {
+    const interval = setInterval(() => {
+      setAdvisorTipIdx(prev => (prev + 1) % (AI_ADVISOR_DATA[step]?.length || 1));
+    }, 8000);
+    return () => clearInterval(interval);
+  }, [step]);
+
+  const liveScore = calculateLiveScore(data);
+  const scoreColor = `hsl(${liveScore * 1.2}, 70%, 45%)`;
+
+  const handleMagicBaseline = async () => {
+    if (!data.targetRole) {
+      toast.error("Please enter a Target Role first!");
+      return;
+    }
+    setLoadingSuggestion('magicBaseline');
     try {
       const res = await fetch('/api/suggest', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ field, value, target_role: data.targetRole }),
+        body: JSON.stringify({ field: 'roleBullets', value: data.targetRole }),
       });
       const result = await res.json();
-      if (result.suggestion) setSuggestions(p => ({ ...p, [field]: result.suggestion }));
-    } catch { /* silent */ }
+      if (result.suggestion) {
+        const bullets = result.suggestion.split('\n').map((b: string) => b.replace(/^[•\-\*\s]+/, '').trim()).filter(Boolean);
+        const newEntry = {
+          id: crypto.randomUUID(),
+          company: 'AI Generated Company',
+          jobTitle: data.targetRole,
+          location: 'Remote',
+          startDate: '2022-01',
+          endDate: 'Present',
+          current: true,
+          description: '',
+          bullets: bullets.length > 0 ? bullets : ['Led key initiatives to drive 15% efficiency gains.']
+        };
+        store.setResumeData({ experience: [...data.experience, newEntry] });
+        toast.success("Magic Baseline generated! Just edit the details.");
+      }
+    } catch { toast.error("Failed to generate magic baseline."); }
     setLoadingSuggestion(null);
   };
 
@@ -127,8 +242,8 @@ export default function ResumeForm({ onSubmit, isLoading }: ResumeFormProps) {
     } else if (field === 'summary') {
       store.updateField('summary', s);
     } else if (field === 'targetRoleIdeation') {
-      applyTargetRoleSuggestion();
-      return; // custom handler
+      applyTargetRoleSuggestion(); // default: applies first
+      return;
     } else if (field === 'extractKeywords') {
       const newSkills = s.split(',').map(sk => sk.trim()).filter(Boolean);
       newSkills.forEach(sk => store.addChip('skills', sk));
@@ -171,7 +286,7 @@ export default function ResumeForm({ onSubmit, isLoading }: ResumeFormProps) {
     const val = data.skills.join(', ');
     if (val.length > 10) {
       if (debounceTimers.current['skills']) clearTimeout(debounceTimers.current['skills']);
-      debounceTimers.current['skills'] = setTimeout(() => fetchSuggestion('skills', val), 2000);
+      debounceTimers.current['skills'] = setTimeout(() => { fetchSuggestion('skills', val); }, 2000);
     }
   };
 
@@ -302,7 +417,7 @@ export default function ResumeForm({ onSubmit, isLoading }: ResumeFormProps) {
       const res = await fetch('/api/suggest', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ field: 'courseworkFromDegree', value: degree }),
+        body: JSON.stringify({ field: 'courseworkFromDegree', value: degree, target_role: data.targetRole, skills: data.skills.join(', ') }),
       });
       const result = await res.json();
       if (result.suggestion) {
@@ -319,7 +434,7 @@ export default function ResumeForm({ onSubmit, isLoading }: ResumeFormProps) {
       const res = await fetch('/api/suggest', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ field: 'targetRoleIdeation', value: expSum || 'Entry Level' }),
+        body: JSON.stringify({ field: 'targetRoleIdeation', value: expSum || 'Entry Level', job_description: data.jobDescription || '' }),
       });
       const result = await res.json();
       if (result.suggestion) {
@@ -373,12 +488,17 @@ export default function ResumeForm({ onSubmit, isLoading }: ResumeFormProps) {
     }
   };
 
-  const applyTargetRoleSuggestion = () => {
+  const applyTargetRoleSuggestion = (specificRole?: string) => {
     const s = suggestions['targetRoleIdeation'];
     if (!s) return;
-    // Just take the first suggested title for simplicity 
-    const firstRole = s.split(',')[0].trim();
-    store.updateField('targetRole', firstRole);
+    if (specificRole) {
+      // Apply specific clicked role
+      store.updateField('targetRole', specificRole.trim());
+    } else {
+      // Fallback: apply the first suggested title
+      const firstRole = s.split(',')[0].trim();
+      store.updateField('targetRole', firstRole);
+    }
     dismissSuggestion('targetRoleIdeation');
   };
 
@@ -681,14 +801,37 @@ export default function ResumeForm({ onSubmit, isLoading }: ResumeFormProps) {
     setFixingType(null);
   };
 
-  const nextStep = () => setStep(Math.min(step + 1, STEPS.length - 1));
-  const prevStep = () => setStep(Math.max(step - 1, 0));
+  const nextStep = () => { setStep(Math.min(step + 1, STEPS.length - 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); };
+  const prevStep = () => { setStep(Math.max(step - 1, 0)); window.scrollTo({ top: 0, behavior: 'smooth' }); };
+
+  // Keyboard shortcuts: Ctrl+ArrowRight / Ctrl+ArrowLeft
+  React.useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.key === 'ArrowRight') { e.preventDefault(); nextStep(); }
+      if (e.ctrlKey && e.key === 'ArrowLeft') { e.preventDefault(); prevStep(); }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  });
 
   const canProceed = useCallback((s: number): boolean => {
     switch (s) {
       case 1: return data.personal.fullName.trim().length > 0 && (data.personal.email.trim().length > 0 || data.personal.phone.trim().length > 0);
       case 2: return data.targetRole.trim().length > 0;
       default: return true;
+    }
+  }, [data]);
+
+  // Real per-step completion detection
+  const isStepComplete = useCallback((s: number): boolean => {
+    switch (s) {
+      case 0: return true; // Start is always complete once passed
+      case 1: return data.personal.fullName.trim().length > 0 && (data.personal.email.trim().length > 0 || data.personal.phone.trim().length > 0);
+      case 2: return data.targetRole.trim().length > 0 && data.skills.length > 0;
+      case 3: return data.experience.some(e => e.jobTitle.trim().length > 0 && e.company.trim().length > 0);
+      case 4: return data.education.some(e => e.degree.trim().length > 0);
+      case 5: return false; // Review is never "complete" — it's the final step
+      default: return false;
     }
   }, [data]);
 
@@ -707,6 +850,34 @@ export default function ResumeForm({ onSubmit, isLoading }: ResumeFormProps) {
       return <div className="ai-suggestion-bubble loading"><Loader2 size={14} className="spin-icon" /><span>AI is thinking...</span></div>;
     }
     if (!suggestions[field]) return null;
+
+    // Special rendering for target role ideation: show clickable role chips
+    if (field === 'targetRoleIdeation') {
+      const roles = suggestions[field].split(',').map(r => r.trim()).filter(Boolean);
+      return (
+        <div className="ai-suggestion-bubble animate-fade-in">
+          <div className="ai-suggestion-header">
+            <Sparkles size={14} />
+            <span>Suggested Roles — Click any to apply</span>
+            <button onClick={() => dismissSuggestion(field)} className="suggestion-dismiss" type="button"><X size={12} /></button>
+          </div>
+          <div className="flex flex-wrap gap-2 mt-2">
+            {roles.map((role, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => applyTargetRoleSuggestion(role)}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-primary/30 bg-primary/5 px-3 py-1.5 text-sm font-medium text-primary hover:bg-primary/15 hover:border-primary/50 transition-all cursor-pointer"
+              >
+                <Target size={12} />
+                {role}
+              </button>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="ai-suggestion-bubble animate-fade-in">
         <div className="ai-suggestion-header">
@@ -731,7 +902,7 @@ export default function ResumeForm({ onSubmit, isLoading }: ResumeFormProps) {
   if (!mounted) return null;
 
   return (
-    <div className="p-8 md:p-10 bg-card text-card-foreground shadow-lg rounded-xl border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shadow-sm animate-fade-in">
+    <div className="p-6 md:p-10 bg-card text-card-foreground shadow-lg rounded-xl border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shadow-sm animate-fade-in">
       {step > 0 && (
         <div className="relative h-1.5 w-full bg-muted rounded-full mb-6 overflow-hidden">
           <div className="h-full bg-gradient-to-r from-primary to-accent transition-all duration-500 rounded-full" style={{ width: `${progress}%` }} />
@@ -739,21 +910,192 @@ export default function ResumeForm({ onSubmit, isLoading }: ResumeFormProps) {
         </div>
       )}
 
-      <div className="flex gap-2 mb-10 overflow-x-auto pb-2 hide-scrollbar">
+      {/* === Redesigned Stepper with connecting lines === */}
+      <div className="flex items-start mb-10 overflow-x-auto pb-2 hide-scrollbar">
         {STEPS.map((s, i) => {
           const Icon = s.icon;
+          const isActive = step === i;
+          const isComplete = i < step && isStepComplete(i);
+          const isPast = i < step;
           return (
-            <button key={s.id} className={`flex flex-col flex-1 min-w-[65px] items-center gap-2 p-3 rounded-xl transition-all cursor-pointer hover:bg-muted/50 ${step === i ? "bg-primary/10" : ""}`} onClick={() => setStep(i)} type="button">
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all shadow-sm ${step === i ? "bg-primary text-primary-foreground border-primary shadow-md scale-110" : step > i ? "bg-emerald-500 text-white border-emerald-500" : "bg-background text-muted-foreground border-input"}`}>{step > i ? <Check size={14} /> : <Icon size={14} />}</div>
-              <span className={`text-sm font-semibold whitespace-nowrap transition-colors mt-1 ${step === i ? "text-primary" : "text-muted-foreground"}`}>{s.title}</span>
-            </button>
+            <React.Fragment key={s.id}>
+              <button
+                className={`flex flex-col items-center gap-1.5 min-w-[80px] p-2 rounded-xl transition-all cursor-pointer hover:bg-muted/50 ${isActive ? 'bg-primary/10' : ''}`}
+                onClick={() => { setStep(i); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                type="button"
+              >
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all shadow-sm ${
+                  isActive ? 'bg-primary text-primary-foreground border-primary shadow-lg scale-110 ring-4 ring-primary/20'
+                  : isComplete ? 'bg-emerald-500 text-white border-emerald-500'
+                  : isPast ? 'bg-amber-500 text-white border-amber-500'
+                  : 'bg-background text-muted-foreground border-input'
+                }`}>
+                  {isComplete ? <Check size={14} /> : <Icon size={14} />}
+                </div>
+                <span className={`text-xs font-bold whitespace-nowrap transition-colors ${isActive ? 'text-primary' : isPast ? 'text-foreground' : 'text-muted-foreground'}`}>{s.title}</span>
+                <span className={`text-[0.6rem] text-muted-foreground whitespace-nowrap hidden md:block`}>{s.desc}</span>
+              </button>
+              {/* Connecting line */}
+              {i < STEPS.length - 1 && (
+                <div className="flex-1 flex items-center min-w-[16px] mt-5">
+                  <div className={`h-0.5 w-full rounded-full transition-all duration-500 ${i < step ? 'bg-primary' : 'bg-border'}`} />
+                </div>
+              )}
+            </React.Fragment>
           );
         })}
       </div>
 
-      <div className="mb-8 mt-4">
-        <h2 className="flex items-center gap-3 text-3xl font-bold tracking-tight mb-3">{React.createElement(STEPS[step].icon, { size: 28, color: 'var(--primary)' })} {STEPS[step].title}</h2>
-        <p className="text-base text-muted-foreground">{STEPS[step].desc}</p>
+      <div className="mb-6 relative">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <h2 className="flex items-center gap-3 text-2xl font-bold tracking-tight mb-1">{React.createElement(STEPS[step].icon, { size: 24, color: 'var(--primary)' })} {STEPS[step].title}</h2>
+            <p className="text-sm text-muted-foreground">{STEPS[step].desc}</p>
+          </div>
+          
+          {/* Unified Master Meter (Clickable) */}
+          <div className="relative">
+            <button 
+              type="button"
+              onClick={() => setShowScoreDetails(!showScoreDetails)}
+              className="flex flex-col items-center group cursor-pointer transition-transform hover:scale-105 outline-none" 
+              title="Click for deep AI analysis & feedback"
+            >
+              <div className="relative w-16 h-16">
+                <svg className="w-full h-full transform -rotate-90">
+                  <circle cx="32" cy="32" r="28" stroke="currentColor" strokeWidth="4" fill="transparent" className="text-muted/20" />
+                  <circle 
+                    cx="32" cy="32" r="28" stroke="currentColor" strokeWidth="4" 
+                    fill="transparent" 
+                    strokeDasharray={175.9} 
+                    strokeDashoffset={175.9 - (175.9 * (reviewResult?.projectedScore || liveScore)) / 100} 
+                    strokeLinecap="round" 
+                    style={{ color: reviewResult ? `hsl(${reviewResult.projectedScore * 1.2}, 70%, 45%)` : scoreColor, transition: 'all 1s ease-out' }} 
+                  />
+                </svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <span className="text-xs font-bold" style={{ color: reviewResult ? `hsl(${reviewResult.projectedScore * 1.2}, 70%, 45%)` : scoreColor }}>
+                    {reviewResult?.projectedScore || liveScore}%
+                  </span>
+                  <span className="text-[0.4rem] uppercase font-bold text-muted-foreground">{reviewResult ? 'Verified' : 'Estimate'}</span>
+                </div>
+                {(!reviewResult && !reviewLoading && step >= 2) && (
+                  <div className="absolute -top-1 -right-1 w-3 h-3 bg-primary rounded-full animate-ping border-2 border-background" />
+                )}
+              </div>
+              <div className="flex items-center gap-1 mt-1">
+                <span className={`text-[0.55rem] font-bold ${reviewResult ? 'text-emerald-500' : 'text-muted-foreground'}`}>
+                  {reviewResult ? 'AI Verified' : 'Completeness'}
+                </span>
+                <ChevronDown size={10} className={`text-muted-foreground transition-transform ${showScoreDetails ? 'rotate-180' : ''}`} />
+              </div>
+            </button>
+
+            {/* Score Details Popover */}
+            {showScoreDetails && (
+              <div className="absolute right-0 mt-2 w-72 sm:w-80 bg-background border border-border shadow-2xl rounded-2xl z-50 p-4 animate-in fade-in zoom-in-95 duration-200 origin-top-right">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm font-bold flex items-center gap-2"><Shield size={16} className="text-primary" /> ATS Analysis</h3>
+                  <button onClick={() => setShowScoreDetails(false)} className="text-muted-foreground hover:text-foreground"><X size={16} /></button>
+                </div>
+
+                {!reviewResult ? (
+                  <div className="text-center py-6 space-y-3">
+                    <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto text-primary">
+                      <Zap size={24} />
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold">Deep AI Check Pending</p>
+                      <p className="text-[0.7rem] text-muted-foreground px-4">Reach the Review step for a full AI audit, or trigger it manually now.</p>
+                    </div>
+                    <button 
+                      onClick={handleReviewReadiness} 
+                      disabled={reviewLoading}
+                      className="w-full h-8 text-xs font-bold bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 flex items-center justify-center gap-2"
+                    >
+                      {reviewLoading ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
+                      Run Instant AI Check
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between p-2 rounded-xl bg-muted/50">
+                      <div className="text-center border-r border-border/50 pr-4 flex-1">
+                        <p className="text-[0.6rem] uppercase text-muted-foreground font-bold leading-tight">Keywords</p>
+                        <p className="text-sm font-bold">{reviewResult.keywordScore}%</p>
+                      </div>
+                      <div className="text-center border-r border-border/50 px-4 flex-1">
+                        <p className="text-[0.6rem] uppercase text-muted-foreground font-bold leading-tight">Format</p>
+                        <p className="text-sm font-bold">{reviewResult.formatScore}%</p>
+                      </div>
+                      <div className="text-center pl-4 flex-1">
+                        <p className="text-[0.6rem] uppercase text-muted-foreground font-bold leading-tight">Bullets</p>
+                        <p className="text-sm font-bold">{reviewResult.bulletScore}%</p>
+                      </div>
+                    </div>
+
+                    {reviewResult.sectionChecks && (
+                      <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                        <p className="text-[0.6rem] uppercase font-bold text-muted-foreground tracking-wider">Critical Feedback</p>
+                        {reviewResult.sectionChecks.filter((s:any) => s.status !== 'pass').slice(0, 4).map((s:any, i:number) => (
+                          <div key={i} className="flex gap-2 p-2 rounded-lg bg-red-500/5 border border-red-500/10">
+                            {s.status === 'fail' ? <AlertTriangle size={12} className="text-red-500 shrink-0 mt-0.5" /> : <Info size={12} className="text-amber-500 shrink-0 mt-0.5" />}
+                            <div className="flex-1">
+                              <p className="text-[0.7rem] font-bold leading-tight">{s.name}</p>
+                              <p className="text-[0.65rem] text-muted-foreground leading-snug">{s.detail}</p>
+                            </div>
+                            {s.fixable && (
+                              <button onClick={() => { handleAutoFix(s.fixType); setShowScoreDetails(false); }} className="text-[0.6rem] font-bold text-primary hover:underline self-center shrink-0">Fix</button>
+                            )}
+                          </div>
+                        ))}
+                        {reviewResult.sectionChecks.every((s:any) => s.status === 'pass') && (
+                          <div className="flex items-center gap-2 py-4 justify-center text-emerald-500">
+                            <CheckCircle2 size={16} />
+                            <span className="text-xs font-bold">Perfect Score! No issues found.</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    <button 
+                      onClick={handleReviewReadiness} 
+                      disabled={reviewLoading}
+                      className="w-full h-8 text-xs font-bold border border-primary/20 hover:bg-primary/5 rounded-lg flex items-center justify-center gap-2"
+                    >
+                      <RefreshCcw size={12} /> Re-run Deep Check
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* AI Expert Advisor Banner */}
+        {AI_ADVISOR_DATA[step] && (
+          <div className="mt-4 flex items-start gap-3 px-4 py-3 rounded-xl bg-primary/5 border border-primary/20 shadow-sm relative overflow-hidden group">
+            <div className="absolute top-0 left-0 w-1 h-full bg-primary/40 group-hover:bg-primary transition-colors" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary shrink-0 animate-pulse">
+              <Sparkles size={16} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-0.5">
+                <span className="text-[0.65rem] font-bold uppercase tracking-wider text-primary">AI Expert Advisor</span>
+                <div className="h-1 w-1 rounded-full bg-primary/30" />
+                <span className="text-[0.65rem] text-muted-foreground">Personalized Coach</span>
+              </div>
+              <p className="text-sm text-foreground/90 leading-tight transition-all duration-500">
+                {AI_ADVISOR_DATA[step][advisorTipIdx]}
+              </p>
+            </div>
+            <div className="flex gap-1 shrink-0 mt-1">
+              {AI_ADVISOR_DATA[step].map((_, i) => (
+                <div key={i} className={`h-1 w-3 rounded-full transition-all ${i === advisorTipIdx ? 'bg-primary w-5' : 'bg-primary/20'}`} />
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       <form onSubmit={handleSubmit}>
@@ -773,23 +1115,100 @@ export default function ResumeForm({ onSubmit, isLoading }: ResumeFormProps) {
             </div>
             {uploadMsg && <div className={`upload-message animate-fade-in ${uploadMsg.startsWith('✅') ? 'success' : 'error'}`}>{uploadMsg}</div>}
             <div className="flex items-center gap-4 my-6 text-sm text-muted-foreground uppercase tracking-widest before:flex-1 before:h-px before:bg-border after:flex-1 after:h-px after:bg-border"><span>OR</span></div>
-            <button type="button" onClick={nextStep} className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-base font-semibold ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-11 px-6 py-3 text-base full-width"><FileText size={16} /> Start from Scratch</button>
+            <div className="flex flex-col gap-3">
+              <button type="button" onClick={nextStep} className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-base font-semibold ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-11 px-6 py-3 text-base full-width"><FileText size={16} /> Start from Scratch</button>
+              
+              <button 
+                type="button" 
+                onClick={handleMagicBaseline} 
+                className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-base font-semibold border border-primary/20 bg-background hover:bg-primary/5 text-primary h-11 px-6 py-3 gap-2 group relative overflow-hidden"
+                disabled={loadingSuggestion === 'magicBaseline'}
+              >
+                {loadingSuggestion === 'magicBaseline' ? (
+                  <Loader2 size={16} className="animate-spin" />
+                ) : (
+                  <Sparkles size={16} className="text-primary group-hover:scale-125 transition-transform" />
+                )}
+                <span>Magic AI Baseline</span>
+                <span className="absolute -right-2 -top-1 px-2 py-0.5 bg-primary text-[0.6rem] font-bold text-primary-foreground rotate-12 group-hover:rotate-0 transition-transform">NEW</span>
+              </button>
+              <p className="text-[0.7rem] text-muted-foreground text-center italic">Best for quick starts: AI generates a high-quality role profile instantly.</p>
+            </div>
           </div>
         )}
 
-        {/* === STEP 1: Personal === */}
+        {/* === STEP 1: Personal + Appearance Settings === */}
         {step === 1 && (
-          <PersonalSection 
-            data={data.personal} 
-            template={data.template} 
-            updatePersonal={store.updatePersonal} 
-          />
+          <div className="flex flex-col gap-6 animate-in fade-in-50 duration-500 animate-fade-in">
+            <PersonalSection 
+              data={data.personal} 
+              template={data.template} 
+              updatePersonal={store.updatePersonal} 
+            />
+
+            {/* Appearance & Template Settings */}
+            <details className="group border rounded-xl bg-muted/20 border-border/50 overflow-hidden" open>
+              <summary className="flex items-center justify-between gap-2 p-4 cursor-pointer select-none hover:bg-muted/30 transition-colors">
+                <h3 className="text-base font-bold flex items-center gap-2">
+                  <Shield size={16} className="text-primary" /> Appearance & Template
+                </h3>
+                <ChevronDown size={16} className="text-muted-foreground transition-transform group-open:rotate-180" />
+              </summary>
+              <div className="px-4 pb-4 pt-2 space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="grid gap-2">
+                    <label className="text-sm font-semibold flex items-center gap-2"><FileText size={14} /> Resume Title</label>
+                    <DebouncedInput type="text" value={data.title} onChangeValue={(v) => store.updateField('title', v)} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" placeholder="e.g. Senior SWE Resume" />
+                  </div>
+                  <div className="grid gap-2">
+                    <label className="text-sm font-semibold flex items-center gap-2"><Zap size={14} /> Theme Color</label>
+                    <div className="flex gap-2 items-center">
+                      <input type="color" value={data.themeColor} onChange={(e) => store.updateField('themeColor', e.target.value)} className="h-10 w-12 rounded border border-input bg-background p-1 cursor-pointer" />
+                      <DebouncedInput type="text" value={data.themeColor} onChangeValue={(v) => store.updateField('themeColor', v)} className="flex h-10 flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm font-mono placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" />
+                    </div>
+                  </div>
+                  <div className="grid gap-2">
+                    <label className="text-sm font-semibold flex items-center gap-2"><Code size={14} /> Font Family</label>
+                    <select value={data.fontFamily} onChange={(e) => store.updateField('fontFamily', e.target.value)} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                      <option value="Inter">Inter (Sans-serif)</option>
+                      <option value="Roboto">Roboto</option>
+                      <option value="Open Sans">Open Sans</option>
+                      <option value="Serif">Times New Roman (Serif)</option>
+                      <option value="Monospace">JetBrains Mono (Monospace)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid gap-2">
+                  <label className="text-sm font-semibold">Resume Template</label>
+                  <div className="template-grid mt-1" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))', gap: '0.75rem' }}>
+                    {TEMPLATES.map(t => (
+                      <button key={t.id} type="button" className={`template-card flex flex-col items-start gap-2 p-2 ${data.template === t.id ? 'active' : ''}`} onClick={() => store.updateField('template', t.id)}>
+                        <div className="w-full aspect-[21/29.7] rounded bg-muted overflow-hidden border border-border/50 relative">
+                          <img src={`/api/templates/${t.id}`} alt={t.name} className="object-cover w-full h-full" loading="lazy" />
+                        </div>
+                        <div className="flex flex-col text-left">
+                          <span className="template-card-name text-xs font-semibold">{t.name}</span>
+                          <span className="template-card-desc text-[0.6rem] mt-0.5 text-muted-foreground">{t.desc}</span>
+                        </div>
+                        {data.template === t.id && <Check size={16} className="template-check absolute top-3 right-3 bg-primary text-white rounded-full p-0.5" />}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </details>
+          </div>
         )}
 
-        {/* === STEP 2: Target & JD === */}
+        {/* === STEP 2: Target, JD & Skills (MERGED) === */}
         {step === 2 && (
-          <div className="flex flex-col gap-6 animate-in fade-in-50 duration-500 animate-fade-in">
-              <TargetAndSkillsSection
+          <div className="flex flex-col gap-8 animate-in fade-in-50 duration-500 animate-fade-in">
+            {/* Auto-trigger: extract skills from JD when arriving with no skills */}
+            {data.jobDescription && data.skills.length === 0 && (
+              <AutoTriggerSkillExtract jd={data.jobDescription} fetchSuggestion={fetchSuggestion} />
+            )}
+            <TargetAndSkillsSection
               targetRole={data.targetRole}
               jobDescription={data.jobDescription}
               updateField={store.updateField}
@@ -803,35 +1222,32 @@ export default function ResumeForm({ onSubmit, isLoading }: ResumeFormProps) {
               handleSuggestTargetRoles={handleSuggestTargetRoles}
               handleExtractKeywords={handleExtractKeywords}
             />
-          </div>
-        )}
 
-        {/* === STEP 3: Skills === */}
-        {step === 3 && (
-          <div className="flex flex-col gap-6 animate-in fade-in-50 duration-500 animate-fade-in">
+            <div className="flex items-center gap-4 text-sm text-muted-foreground uppercase tracking-widest before:flex-1 before:h-px before:bg-border after:flex-1 after:h-px after:bg-border"><Code size={14} /> Skills</div>
+
             <div className="grid gap-2">
               <div className="flex items-center justify-between gap-3">
-                <label className="text-base font-semibold leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-2"><Code size={18} /> Skills {loadingSuggestion === 'skills' && <Loader2 size={16} className="spin-icon inline-loader" />}</label>
-                <button type="button" onClick={() => fetchSuggestion('skills', data.targetRole || data.skills.join(', ') || 'general')} disabled={loadingSuggestion === 'skills'} className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-base font-semibold transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-primary/30 text-primary hover:bg-primary/10 h-10 px-4 gap-2">
-                  {loadingSuggestion === 'skills' ? <><Loader2 size={14} className="spin-icon" /> Suggesting...</> : <><Sparkles size={14} /> AI Suggest Skills</>}
+                <label className="text-base font-semibold leading-none flex items-center gap-2"><Code size={18} /> Skills {loadingSuggestion === 'skills' && <Loader2 size={16} className="spin-icon inline-loader" />}</label>
+                <button type="button" onClick={() => fetchSuggestion('skills', data.targetRole || data.skills.join(', ') || 'general')} disabled={loadingSuggestion === 'skills'} className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-primary/30 text-primary hover:bg-primary/10 h-9 px-3 gap-2">
+                  {loadingSuggestion === 'skills' ? <><Loader2 size={14} className="spin-icon" /> Suggesting...</> : <><Sparkles size={14} /> AI Suggest</>}
                 </button>
               </div>
               <div className="flex items-center gap-2">
                 <DebouncedInput type="text" value={skillInput} onChangeValue={val => setSkillInput(val)}
                   onKeyDown={e => { if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); handleAddChip('skills', skillInput, setSkillInput); onSkillsChange(); } }}
-                  className="flex w-full rounded-md border border-input bg-background px-4 py-3 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50" placeholder="Type a skill and press Enter" delay={10} />
-                <button type="button" onClick={() => { handleAddChip('skills', skillInput, setSkillInput); onSkillsChange(); }} className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-base font-semibold ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-10 w-10 shrink-0"><Plus size={16} /></button>
+                  className="flex w-full rounded-md border border-input bg-background px-4 py-3 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" placeholder="Type a skill and press Enter" delay={10} />
+                <button type="button" onClick={() => { handleAddChip('skills', skillInput, setSkillInput); onSkillsChange(); }} className="inline-flex items-center justify-center rounded-md hover:bg-accent hover:text-accent-foreground h-10 w-10 shrink-0"><Plus size={16} /></button>
               </div>
               {data.skills.length > 0 && (
                 <div className="skill-chips">
                   {data.skills.map((s, i) => (
-                    <span key={i} className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-primary/10 text-primary hover:bg-primary/20">{s}<button type="button" onClick={() => store.removeChip('skills', i)} className="opacity-50 hover:opacity-100 transition-opacity focus:outline-none"><X size={11} /></button></span>
+                    <span key={i} className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-semibold border-transparent bg-primary/10 text-primary hover:bg-primary/20">{s}<button type="button" onClick={() => store.removeChip('skills', i)} className="opacity-50 hover:opacity-100 transition-opacity"><X size={11} /></button></span>
                   ))}
                 </div>
               )}
               <SuggestionBubble field="skills" />
               {data.jobDescription && (
-                <button type="button" onClick={() => fetchSuggestion('skills', `Extract the most important technical skills and keywords from this JD: ${data.jobDescription.substring(0, 500)}`)} disabled={loadingSuggestion === 'skills'} className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-primary/30 text-primary hover:bg-primary/10 h-10 px-4 text-base gap-1.5" style={{ marginTop: '0.5rem' }}>
+                <button type="button" onClick={() => fetchSuggestion('skills', `Extract the most important technical skills and keywords from this JD: ${data.jobDescription.substring(0, 500)}`)} disabled={loadingSuggestion === 'skills'} className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium border border-primary/30 text-primary hover:bg-primary/10 h-9 px-3 gap-1.5 self-start mt-1">
                   <Target size={13} /> Extract Skills from JD
                 </button>
               )}
@@ -839,8 +1255,8 @@ export default function ResumeForm({ onSubmit, isLoading }: ResumeFormProps) {
           </div>
         )}
 
-        {/* === STEP 4: Experience === */}
-        {step === 4 && (
+        {/* === STEP 3: Experience === */}
+        {step === 3 && (
           <ExperienceSection 
              handleRewriteBullets={handleRewriteBullets} 
              handleGenerateRoleBullets={handleGenerateRoleBullets} 
@@ -856,36 +1272,41 @@ export default function ResumeForm({ onSubmit, isLoading }: ResumeFormProps) {
           />
         )}
 
-        {/* === STEP 5: Projects === */}
+        {/* === STEP 4: Projects & Education (MERGED) === */}
+        {step === 4 && (
+          <div className="flex flex-col gap-8 animate-in fade-in-50 duration-500 animate-fade-in">
+            <ProjectsSection 
+              handleRewriteProjectDesc={handleRewriteProjectDesc}
+              handleSuggestTechStack={handleSuggestTechStack}
+              loadingSuggestion={loadingSuggestion}
+              projects={data.projects}
+              updateProject={store.updateProject}
+              moveProject={store.moveProject}
+              addProject={store.addProject}
+              removeProject={store.removeProject}
+            />
+
+            <div className="flex items-center gap-4 text-sm text-muted-foreground uppercase tracking-widest before:flex-1 before:h-px before:bg-border after:flex-1 after:h-px after:bg-border"><GraduationCap size={14} /> Education</div>
+
+            <EducationSection 
+              education={data.education}
+              updateEducation={store.updateEducation}
+              moveEducation={store.moveEducation}
+              addEducation={store.addEducation}
+              removeEducation={store.removeEducation}
+              handleSuggestCoursework={handleSuggestCoursework}
+              loadingSuggestion={loadingSuggestion}
+            />
+          </div>
+        )}
+
+        {/* === STEP 5: Review & Generate === */}
         {step === 5 && (
-          <ProjectsSection 
-            handleRewriteProjectDesc={handleRewriteProjectDesc}
-            handleSuggestTechStack={handleSuggestTechStack}
-            loadingSuggestion={loadingSuggestion}
-            projects={data.projects}
-            updateProject={store.updateProject}
-            moveProject={store.moveProject}
-            addProject={store.addProject}
-            removeProject={store.removeProject}
-          />
-        )}
-
-        {/* === STEP 6: Education === */}
-        {step === 6 && (
-          <EducationSection 
-            education={data.education}
-            updateEducation={store.updateEducation}
-            moveEducation={store.moveEducation}
-            addEducation={store.addEducation}
-            removeEducation={store.removeEducation}
-            handleSuggestCoursework={handleSuggestCoursework}
-            loadingSuggestion={loadingSuggestion}
-          />
-        )}
-
-        {/* === STEP 7: Review & Generate === */}
-        {step === 7 && (
           <div className="flex flex-col gap-6 animate-in fade-in-50 duration-500 animate-fade-in">
+            {/* Auto-trigger: readiness review on entry */}
+            {!reviewResult && !reviewLoading && (
+              <AutoTriggerReview handleReviewReadiness={handleReviewReadiness} />
+            )}
             {/* Summary */}
             <div className="grid gap-3">
               <div className="flex items-center justify-between gap-2">
@@ -898,189 +1319,7 @@ export default function ResumeForm({ onSubmit, isLoading }: ResumeFormProps) {
               <p className="text-[0.95rem] text-muted-foreground italic">Click &quot;AI Auto-fill&quot; to generate from your data, or write your own.</p>
             </div>
 
-            {/* General Settings */}
-            <div className="grid gap-6 p-6 border rounded-xl bg-muted/20 border-border/50">
-              <h3 className="text-lg font-bold flex items-center gap-2">
-                <Shield size={18} className="text-primary" /> General Settings
-              </h3>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="grid gap-2">
-                  <label className="text-sm font-semibold flex items-center gap-2">
-                    <FileText size={14} /> Resume Title
-                  </label>
-                  <DebouncedInput
-                    type="text"
-                    value={data.title}
-                    onChangeValue={(v) => store.updateField('title', v)}
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                    placeholder="e.g. Senior Software Engineer Resume"
-                  />
-                  <p className="text-[0.7rem] text-muted-foreground">Used for file naming and organization.</p>
-                </div>
 
-                <div className="grid gap-2">
-                  <label className="text-sm font-semibold flex items-center gap-2">
-                    <Zap size={14} /> Theme Color
-                  </label>
-                  <div className="flex gap-2 items-center">
-                    <input
-                      type="color"
-                      value={data.themeColor}
-                      onChange={(e) => store.updateField('themeColor', e.target.value)}
-                      className="h-10 w-12 rounded border border-input bg-background p-1 cursor-pointer"
-                    />
-                    <DebouncedInput
-                      type="text"
-                      value={data.themeColor}
-                      onChangeValue={(v) => store.updateField('themeColor', v)}
-                      className="flex h-10 flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 font-mono"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid gap-2">
-                  <label className="text-sm font-semibold flex items-center gap-2">
-                    <Code size={14} /> Font Family
-                  </label>
-                  <select
-                    value={data.fontFamily}
-                    onChange={(e) => store.updateField('fontFamily', e.target.value)}
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    <option value="Inter">Inter (Sans-serif)</option>
-                    <option value="Roboto">Roboto</option>
-                    <option value="Open Sans">Open Sans</option>
-                    <option value="Serif">Times New Roman (Serif)</option>
-                    <option value="Monospace">JetBrains Mono (Monospace)</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            {/* Template Selector */}
-            <div className="grid gap-2">
-              <label className="text-base font-semibold leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-2">Resume Template</label>
-              <div className="template-grid">
-                {( [
-                  {
-                    id: 'professional' as const,
-                    name: 'Professional',
-                    desc: 'Clean, corporate traditional',
-                    color: '#000000',
-                    preview: (
-                      <div style={{ padding: '6px', display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                        <div style={{ height: '4px', width: '60%', background: '#000000', borderRadius: '1px' }} />
-                        <div style={{ height: '2px', width: '40%', background: '#94a3b8' }} />
-                        <div style={{ height: '1px', background: '#e2e8f0', margin: '2px 0' }} />
-                        <div style={{ display: 'flex', gap: '4px' }}>
-                          <div style={{ height: '20px', width: '2px', background: '#e2e8f0', flexShrink: 0 }} />
-                          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                            <div style={{ height: '2px', width: '80%', background: '#334155' }} />
-                            <div style={{ height: '2px', width: '90%', background: '#e2e8f0' }} />
-                            <div style={{ height: '2px', width: '70%', background: '#e2e8f0' }} />
-                          </div>
-                        </div>
-                      </div>
-                    ),
-                  },
-                  {
-                    id: 'modern' as const,
-                    name: 'Modern',
-                    desc: 'Stylish with color accents',
-                    color: '#7c3aed',
-                    preview: (
-                      <div style={{ padding: '6px', display: 'flex', gap: '4px' }}>
-                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                          <div style={{ height: '2px', width: '60%', background: '#94a3b8' }} />
-                          <div style={{ height: '2px', background: '#7c3aed', margin: '2px 0', opacity: 0.3 }} />
-                          <div style={{ display: 'flex', gap: '3px', alignItems: 'flex-start' }}>
-                            <div style={{ width: '2px', height: '20px', background: '#e2e8f0', flexShrink: 0, marginTop: '1px' }} />
-                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                              <div style={{ height: '2px', width: '70%', background: '#334155' }} />
-                              <div style={{ height: '2px', width: '90%', background: '#e2e8f0' }} />
-                              <div style={{ height: '2px', width: '80%', background: '#e2e8f0' }} />
-                            </div>
-                          </div>
-                        </div>
-                        <div style={{ width: '30%', display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                          <div style={{ height: '3px', width: '80%', background: '#7c3aed', borderRadius: '1px' }} />
-                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '2px' }}>
-                            <div style={{ height: '4px', width: '45%', background: '#f1f5f9', borderRadius: '1px' }} />
-                            <div style={{ height: '4px', width: '35%', background: '#f1f5f9', borderRadius: '1px' }} />
-                            <div style={{ height: '4px', width: '50%', background: '#f1f5f9', borderRadius: '1px' }} />
-                          </div>
-                        </div>
-                      </div>
-                    ),
-                  },
-                  {
-                    id: 'minimal' as const,
-                    name: 'Minimal',
-                    desc: 'Clean monospace, no-frills',
-                    color: '#0f172a',
-                    preview: (
-                      <div style={{ padding: '6px', display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                        <div style={{ height: '5px', width: '50%', background: '#0f172a', borderRadius: '0' }} />
-                        <div style={{ height: '2px', background: '#0f172a', marginBottom: '2px' }} />
-                        <div style={{ height: '2px', width: '70%', background: '#94a3b8' }} />
-                        <div style={{ height: '8px', width: '30%', background: '#0f172a', marginTop: '3px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          <span style={{ fontSize: '4px', color: 'white', fontWeight: 700 }}>SKILLS</span>
-                        </div>
-                        <div style={{ height: '2px', width: '85%', background: '#e2e8f0' }} />
-                        <div style={{ height: '8px', width: '35%', background: '#0f172a', marginTop: '2px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          <span style={{ fontSize: '4px', color: 'white', fontWeight: 700 }}>EXP</span>
-                        </div>
-                        <div style={{ height: '2px', width: '90%', background: '#e2e8f0' }} />
-                        <div style={{ height: '2px', width: '75%', background: '#e2e8f0' }} />
-                      </div>
-                    ),
-                  },
-                ] as const).map(tmpl => (
-                  <button
-                    key={tmpl.id}
-                    type="button"
-                    onClick={() => store.updateField('template', tmpl.id)}
-                    style={{
-                      position: 'relative',
-                      border: data.template === tmpl.id ? `2px solid ${tmpl.color}` : '2px solid var(--surface-border)',
-                      borderRadius: 'var(--radius-md)',
-                      background: data.template === tmpl.id ? `${tmpl.color}08` : 'var(--surface)',
-                      padding: '0',
-                      cursor: 'pointer',
-                      overflow: 'hidden',
-                      transition: 'all 0.2s ease',
-                      textAlign: 'left',
-                    }}
-                  >
-                    {/* Mini preview illustration */}
-                    <div style={{
-                      background: 'white',
-                      borderBottom: '1px solid var(--surface-border)',
-                      minHeight: '65px',
-                    }}>
-                      {tmpl.preview}
-                    </div>
-                    {/* Label */}
-                    <div style={{ padding: '0.5rem 0.6rem' }}>
-                      <p style={{
-                        fontSize: '0.82rem',
-                        fontWeight: 700,
-                        color: data.template === tmpl.id ? tmpl.color : 'var(--foreground)',
-                        marginBottom: '0.1rem',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.3rem',
-                      }}>
-                        {data.template === tmpl.id && <Check size={13} style={{ color: tmpl.color }} />}
-                        {tmpl.name}
-                      </p>
-                      <p style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>{tmpl.desc}</p>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
 
             {/* Certifications */}
             <div className="grid gap-2">
@@ -1114,166 +1353,38 @@ export default function ResumeForm({ onSubmit, isLoading }: ResumeFormProps) {
               )}
             </div>
 
-            {/* Resume Readiness Check */}
-            <div className="grid gap-2">
-              <div className="flex items-center justify-between gap-2">
-                <label className="text-base font-semibold leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-2"><BarChart3 size={14} /> Resume Readiness Check</label>
-                <button type="button" onClick={handleReviewReadiness} disabled={reviewLoading} className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-primary/30 text-primary hover:bg-primary/10 h-10 px-4 text-base gap-1.5">
-                  {reviewLoading ? <><Loader2 size={13} className="spin-icon" /> Analyzing...</> : <><Shield size={13} /> Check Readiness</>}
-                </button>
-              </div>
-              <p className="text-[0.85rem] text-muted-foreground italic">Free ATS analysis with detailed breakdown. No credits charged.</p>
-
-              {reviewResult && (
-                <div className="animate-fade-in" style={{ marginTop: '0.75rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--surface-border)', overflow: 'hidden' }}>
-
-                  {/* Score Header */}
-                  <div style={{ padding: '1rem 1.25rem', background: 'var(--surface)', display: 'flex', alignItems: 'center', gap: '1rem', borderBottom: '1px solid var(--surface-border)' }}>
-                    <div style={{
-                      width: '60px', height: '60px', borderRadius: '50%',
-                      background: `conic-gradient(${reviewResult.projectedScore >= 70 ? '#10b981' : reviewResult.projectedScore >= 50 ? '#f59e0b' : '#ef4444'} ${reviewResult.projectedScore * 3.6}deg, var(--surface-border) 0deg)`,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
-                    }}>
-                      <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--background)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <span style={{ fontWeight: 700, fontSize: '1.05rem', color: reviewResult.projectedScore >= 70 ? '#10b981' : reviewResult.projectedScore >= 50 ? '#f59e0b' : '#ef4444' }}>{reviewResult.projectedScore}%</span>
-                      </div>
-                    </div>
-                    <div style={{ flex: 1 }}>
-                      <p style={{ fontWeight: 600, fontSize: '0.95rem', color: 'var(--foreground)', marginBottom: '0.15rem' }}>Projected ATS Score</p>
-                      <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                        {reviewResult.projectedScore >= 70 ? 'Strong resume! Ready to generate.' : reviewResult.projectedScore >= 50 ? 'Good start — apply fixes below to boost your score.' : 'Needs improvement — fix the issues below.'}
-                      </p>
-                    </div>
-                    {reviewResult.canAutoFix && (
-                      <button type="button" onClick={handleApplyAllFixes} disabled={!!fixingType} className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-base font-semibold ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-11 px-6 py-3 text-base" style={{ fontSize: '0.78rem', padding: '0.5rem 0.85rem', whiteSpace: 'nowrap' }}>
-                        {fixingType ? <><Loader2 size={13} className="spin-icon" /> Fixing...</> : <><Zap size={13} /> Apply All Fixes</>}
-                      </button>
-                    )}
+            {/* Readiness Summary (Compact) */}
+            {reviewResult && (
+              <div className="p-4 rounded-xl bg-emerald-500/5 border border-emerald-500/10 flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-600">
+                    <CheckCircle2 size={24} />
                   </div>
-
-                  {/* Component Score Bars */}
-                  <div style={{ padding: '0.75rem 1.25rem', borderBottom: '1px solid var(--surface-border)' }}>
-                    <p style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>Score Breakdown</p>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.4rem' }}>
-                      {[
-                        { label: 'Keywords', score: reviewResult.keywordScore, w: '35%' },
-                        { label: 'Sections', score: reviewResult.sectionScore, w: '20%' },
-                        { label: 'Bullets', score: reviewResult.bulletScore, w: '15%' },
-                        { label: 'Readability', score: reviewResult.readabilityScore, w: '15%' },
-                        { label: 'Format', score: reviewResult.formatScore, w: '15%' },
-                      ].map(c => (
-                        <div key={c.label} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.75rem' }}>
-                          <span style={{ width: '75px', color: 'var(--text-muted)', flexShrink: 0 }}>{c.label} <span style={{ opacity: 0.6 }}>({c.w})</span></span>
-                          <div style={{ flex: 1, height: '5px', borderRadius: '3px', background: 'var(--surface-border)', overflow: 'hidden' }}>
-                            <div style={{ height: '100%', width: `${c.score}%`, background: c.score >= 70 ? '#10b981' : c.score >= 50 ? '#f59e0b' : '#ef4444', borderRadius: '3px', transition: 'width 0.5s ease' }} />
-                          </div>
-                          <span style={{ fontWeight: 700, width: '28px', textAlign: 'right', fontSize: '0.73rem', color: c.score >= 70 ? '#10b981' : c.score >= 50 ? '#f59e0b' : '#ef4444' }}>{c.score}</span>
-                        </div>
-                      ))}
-                    </div>
+                  <div>
+                    <p className="text-sm font-bold">AI Audit Complete ({reviewResult.projectedScore}%)</p>
+                    <p className="text-xs text-muted-foreground">Detailed feedback available in the header score meter.</p>
                   </div>
-
-                  {/* Section-by-Section Audit */}
-                  {reviewResult.sectionChecks && (
-                    <div style={{ padding: '0.75rem 1.25rem', borderBottom: '1px solid var(--surface-border)' }}>
-                      <p style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>Section Audit</p>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
-                        {reviewResult.sectionChecks.map((s: any, i: number) => (
-                          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.78rem', padding: '0.3rem 0' }}>
-                            <span style={{ flexShrink: 0 }}>
-                              {s.status === 'pass' ? <CheckCircle2 size={14} style={{ color: '#10b981' }} /> : s.status === 'warn' ? <AlertTriangle size={14} style={{ color: '#f59e0b' }} /> : <AlertTriangle size={14} style={{ color: '#ef4444' }} />}
-                            </span>
-                            <span style={{ width: '120px', fontWeight: 500, color: 'var(--foreground)', flexShrink: 0 }}>{s.name}</span>
-                            <span style={{ flex: 1, color: 'var(--text-muted)', fontSize: '0.73rem' }}>{s.detail}</span>
-                            {s.fixable && s.fixType && (
-                              <button type="button" onClick={() => handleAutoFix(s.fixType)} disabled={!!fixingType}
-                                style={{ fontSize: '0.7rem', padding: '0.2rem 0.5rem', border: '1px solid var(--primary)', borderRadius: '4px', background: 'transparent', color: 'var(--primary)', cursor: 'pointer', whiteSpace: 'nowrap', opacity: fixingType ? 0.5 : 1 }}
-                              >
-                                {fixingType === s.fixType ? <Loader2 size={11} className="spin-icon" /> : <><Zap size={11} /> Fix</>}
-                              </button>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Bullet Quality Stats */}
-                  {reviewResult.bulletStats && reviewResult.bulletStats.total > 0 && (
-                    <div style={{ padding: '0.75rem 1.25rem', borderBottom: reviewResult.bulletIssues?.length > 0 ? '1px solid var(--surface-border)' : 'none' }}>
-                      <p style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>Bullet Quality</p>
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.5rem' }}>
-                        {[
-                          { label: 'Total', value: reviewResult.bulletStats.total, color: 'var(--foreground)' },
-                          { label: 'Action Verb', value: `${reviewResult.bulletStats.withActionVerb}/${reviewResult.bulletStats.total}`, color: reviewResult.bulletStats.withActionVerb >= reviewResult.bulletStats.total * 0.8 ? '#10b981' : '#f59e0b' },
-                          { label: 'With Metrics', value: `${reviewResult.bulletStats.withMetrics}/${reviewResult.bulletStats.total}`, color: reviewResult.bulletStats.withMetrics >= reviewResult.bulletStats.total * 0.5 ? '#10b981' : '#ef4444' },
-                          { label: 'Avg Length', value: `${reviewResult.bulletStats.avgLength}ch`, color: reviewResult.bulletStats.avgLength >= 50 && reviewResult.bulletStats.avgLength <= 150 ? '#10b981' : '#f59e0b' },
-                        ].map(s => (
-                          <div key={s.label} style={{ textAlign: 'center' }}>
-                            <p style={{ fontSize: '1rem', fontWeight: 700, color: s.color }}>{s.value}</p>
-                            <p style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>{s.label}</p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Per-Bullet Issues */}
-                  {reviewResult.bulletIssues && reviewResult.bulletIssues.length > 0 && (
-                    <div style={{ padding: '0.75rem 1.25rem' }}>
-                      <button type="button" onClick={() => setShowBulletDetails(!showBulletDetails)} style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.72rem', fontWeight: 600, color: '#f59e0b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.4rem', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
-                        {showBulletDetails ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
-                        {reviewResult.bulletIssues.length} Bullet Issue{reviewResult.bulletIssues.length !== 1 ? 's' : ''} Found
-                      </button>
-                      {showBulletDetails && (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                          {reviewResult.bulletIssues.map((bi: any, i: number) => (
-                            <div key={i} style={{ padding: '0.5rem 0.6rem', background: 'rgba(245, 158, 11, 0.05)', borderRadius: '6px', border: '1px solid rgba(245, 158, 11, 0.15)' }}>
-                              <p style={{ fontSize: '0.75rem', color: 'var(--foreground)', marginBottom: '0.25rem', fontStyle: 'italic' }}>"{bi.bullet}"</p>
-                              {bi.issues.map((issue: string, j: number) => (
-                                <p key={j} style={{ fontSize: '0.72rem', color: '#f59e0b', paddingLeft: '0.5rem' }}>→ {issue}</p>
-                              ))}
-                            </div>
-                          ))}
-                          <button type="button" onClick={() => handleAutoFix('bullets')} disabled={!!fixingType}
-                            style={{ alignSelf: 'flex-start', fontSize: '0.75rem', padding: '0.35rem 0.7rem', border: '1px solid var(--primary)', borderRadius: '6px', background: 'transparent', color: 'var(--primary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.3rem', marginTop: '0.25rem' }}
-                          >
-                            {fixingType === 'bullets' ? <><Loader2 size={12} className="spin-icon" /> Rewriting...</> : <><Zap size={12} /> Fix All Bullets with AI</>}
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* All Good */}
-                  {(!reviewResult.bulletIssues || reviewResult.bulletIssues.length === 0) && reviewResult.sectionChecks?.every((s: any) => s.status === 'pass') && (
-                    <div style={{ padding: '0.75rem 1.25rem' }}>
-                      <p style={{ fontSize: '0.82rem', color: '#10b981', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                        <CheckCircle2 size={14} /> Your resume looks great! Ready to generate.
-                      </p>
-                    </div>
-                  )}
                 </div>
-              )}
-            </div>
-
-            {/* Template Selector */}
-            <div className="grid gap-2">
-              <label className="text-base font-semibold leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-2">Resume Template</label>
-              <div className="template-grid">
-                {TEMPLATES.map(t => (
-                  <button key={t.id} type="button" className={`template-card ${data.template === t.id ? 'active' : ''}`} onClick={() => store.updateField('template', t.id)}>
-                    <span className="template-card-name">{t.name}</span>
-                    <span className="template-card-desc">{t.desc}</span>
-                    {data.template === t.id && <Check size={16} className="template-check" />}
+                {reviewResult.canAutoFix && (
+                  <button type="button" onClick={handleApplyAllFixes} disabled={!!fixingType} className="h-9 px-4 text-xs font-bold bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 flex items-center gap-2">
+                    {fixingType ? <Loader2 size={12} className="animate-spin" /> : <Zap size={12} />} Apply Fixes
                   </button>
-                ))}
+                )}
               </div>
-            </div>
+            )}
+            {!reviewResult && (
+              <div className="p-4 rounded-xl bg-primary/5 border border-primary/10 flex items-center justify-between gap-4">
+                 <div className="flex items-center gap-3">
+                    <Loader2 size={20} className="animate-spin text-primary" />
+                    <div>
+                      <p className="text-sm font-bold">Running AI Readiness Audit...</p>
+                      <p className="text-xs text-muted-foreground">Analyzing your resume against industry standards.</p>
+                    </div>
+                 </div>
+              </div>
+            )}
           </div>
         )}
-
-    
 
         <div className="step-nav" style={{ alignItems: 'center' }}>
           {step > 0 && <button type="button" onClick={prevStep} className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-base font-semibold ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-11 px-6 py-3 text-base"><ChevronLeft size={16} /> Back</button>}

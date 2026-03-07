@@ -52,7 +52,7 @@ export const resumeSchema = z.object({
     themeColor: z.string(),
     fontFamily: z.string(),
     style: z.record(z.string(), z.any()).optional(),
-    template: z.enum(['modern', 'professional', 'minimal']),
+    template: z.enum(['professional', 'modern', 'minimal', 'executive', 'creative', 'tech', 'startup', 'academic', 'classic', 'bold', 'elegant', 'compact', 'datascientist', 'designer', 'finance']),
 });
 
 export type ResumeFormValues = z.infer<typeof resumeSchema>;

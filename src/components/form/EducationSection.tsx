@@ -2,6 +2,7 @@ import React, { memo } from 'react';
 import { Plus, GraduationCap } from 'lucide-react';
 import { EducationEntry } from '@/types/resume';
 import { EducationCard } from './cards/EducationCard';
+import { Accordion } from '@/components/ui/accordion';
 
 interface Props {
   education: EducationEntry[];
@@ -31,19 +32,23 @@ export const EducationSection = memo(function EducationSection({
           <p>No education added yet. Include your degrees, bootcamps, or certifications.</p>
         </div>
       )}
-      {education.map((edu, idx) => (
-        <EducationCard 
-          key={edu.id}
-          edu={edu}
-          idx={idx}
-          totalEntries={education.length}
-          onRemove={removeEducation}
-          onMove={moveEducation}
-          onUpdate={updateEducation as any}
-          handleSuggestCoursework={handleSuggestCoursework}
-          loadingSuggestion={loadingSuggestion}
-        />
-      ))}
+      {education.length > 0 && (
+        <Accordion type="single" collapsible className="w-full space-y-4">
+          {education.map((edu, idx) => (
+            <EducationCard 
+              key={edu.id}
+              edu={edu}
+              idx={idx}
+              totalEntries={education.length}
+              onRemove={removeEducation}
+              onMove={moveEducation}
+              onUpdate={updateEducation as any}
+              handleSuggestCoursework={handleSuggestCoursework}
+              loadingSuggestion={loadingSuggestion}
+            />
+          ))}
+        </Accordion>
+      )}
       <button 
         type="button" 
         onClick={addEducation} 

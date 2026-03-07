@@ -40,7 +40,7 @@ export interface EducationEntry {
     coursework?: string;
 }
 
-export type ResumeTemplate = 'professional' | 'modern' | 'minimal';
+export type ResumeTemplate = 'professional' | 'modern' | 'minimal' | 'executive' | 'creative' | 'tech' | 'startup' | 'academic' | 'classic' | 'bold' | 'elegant' | 'compact' | 'datascientist' | 'designer' | 'finance';
 
 export interface ResumeData {
     personal: PersonalInfo;

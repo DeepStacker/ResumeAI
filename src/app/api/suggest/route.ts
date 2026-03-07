@@ -1,6 +1,8 @@
 import { callAI } from '@/lib/ai';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { redis } from '@/lib/redis';
+import crypto from 'crypto';
 
 const suggestionSchema = z.object({
     suggestion: z.string()
@@ -42,11 +44,25 @@ export async function POST(req: Request) {
 
             targetRoleIdeation: `The candidate has the following experience/skills: "${value}". ${contextBlock} Suggest 3 highly relevant target job titles they should apply for. Format as a comma-separated list. Output ONLY the suggested titles.`,
 
-            techStackFromDesc: `Read the following project description: "${value}". Extract all underlying programming languages, frameworks, libraries, and technical tools explicitly mentioned or strongly implied. Output ONLY a comma-separated list of the technologies (e.g., React, Node.js, PostgreSQL). Do not include soft skills or non-technical nouns.`
+            techStackFromDesc: `Read the following project description: "${value}". Extract all underlying programming languages, frameworks, libraries, and technical tools explicitly mentioned or strongly implied. Output ONLY a comma-separated list of the technologies (e.g., React, Node.js, PostgreSQL). Do not include soft skills or non-technical nouns.`,
+
+            courseworkFromDegree: `The candidate has a degree in: "${value}". They are targeting "${target_role || 'a professional role'}". ${contextBlock} Suggest 6-10 highly relevant coursework subjects, specializations, or academic projects that would strengthen their resume for this role. Format as a comma-separated list. Output ONLY the course names.`,
+
+            extractKeywords: `Read the following job description: "${value}". Extract the 10-15 most important technical skills, tools, and keywords that an ATS system would look for. Format as a comma-separated list. Output ONLY the keywords.`
         };
 
         const prompt = fieldPrompts[field];
         if (!prompt) return NextResponse.json({ suggestion: '' });
+
+        const promptHash = crypto.createHash('md5').update(prompt).digest('hex');
+        const cacheKey = `ai:suggest:${promptHash}`;
+
+        // LAYER 3 CACHE: Check Redis
+        const cachedData = await redis.get(cacheKey);
+        if (cachedData) {
+            console.log(`[CACHE HIT] Redis intercepted suggest request: ${cacheKey}`);
+            return NextResponse.json({ suggestion: typeof cachedData === 'string' ? JSON.parse(cachedData).suggestion : (cachedData as any).suggestion || cachedData });
+        }
 
         const aiResult = await callAI({
             messages: [
@@ -59,6 +75,10 @@ export async function POST(req: Request) {
 
         try {
             const parsed = suggestionSchema.parse(JSON.parse(aiResult.content.trim()));
+
+            // Cache successful OpenAI response for 7 days
+            await redis.set(cacheKey, JSON.stringify({ suggestion: parsed.suggestion }), { ex: 604800 });
+
             return NextResponse.json({ suggestion: parsed.suggestion });
         } catch (parseError) {
             console.error("AI Output Parse Error:", parseError, aiResult.content);
