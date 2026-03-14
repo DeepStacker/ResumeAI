@@ -32,12 +32,12 @@ export function JobCard({ job, onSave, onApply }: JobCardProps) {
             
             <Card 
                 onClick={() => setSelectedJobId(job.id)}
-                className="relative bg-zinc-950/40 border-white/5 backdrop-blur-xl rounded-2xl p-6 transition-all duration-300 group-hover:translate-y-[-2px] group-hover:border-primary/30 cursor-pointer"
+                className="relative bg-zinc-950/40 border-white/5 backdrop-blur-xl rounded-2xl p-4 px-5 transition-all duration-300 group-hover:translate-y-[-2px] group-hover:border-primary/30 cursor-pointer"
             >
                 <div className="flex justify-between items-start gap-4">
                     <div className="flex gap-4">
-                        <div className="h-14 w-14 rounded-xl bg-zinc-900 border border-white/10 flex items-center justify-center shrink-0 group-hover:border-primary/30 transition-colors">
-                            <Building2 className="text-zinc-500 group-hover:text-primary transition-colors" size={24} />
+                        <div className="h-12 w-12 rounded-xl bg-zinc-900 border border-white/10 flex items-center justify-center shrink-0 group-hover:border-primary/30 transition-colors">
+                            <Building2 className="text-zinc-500 group-hover:text-primary transition-colors" size={20} />
                         </div>
                         <div>
                             <div className="flex flex-wrap items-center gap-2 mb-1">
@@ -60,9 +60,16 @@ export function JobCard({ job, onSave, onApply }: JobCardProps) {
                                     </Badge>
                                 )}
                             </div>
-                            <p className="text-zinc-400 font-medium flex items-center gap-1.5 text-sm">
-                                {job.company}
-                            </p>
+                            <div className="flex flex-wrap items-center gap-2 mt-1">
+                                <span className="text-zinc-400 font-medium text-sm">
+                                    {job.company}
+                                </span>
+                                {job.source && (
+                                    <Badge variant="outline" className="bg-zinc-900 border-white/5 text-zinc-500 text-[0.6rem] py-0 px-1.5 font-normal">
+                                        via {job.source}
+                                    </Badge>
+                                )}
+                            </div>
                         </div>
                     </div>
                     
@@ -85,28 +92,56 @@ export function JobCard({ job, onSave, onApply }: JobCardProps) {
                     </div>
                 </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-6">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
                     <div className="flex items-center gap-2 text-zinc-500">
                         <div className="h-8 w-8 rounded-lg bg-zinc-900/50 flex items-center justify-center">
                             <MapPin size={14} />
                         </div>
-                        <span className="text-xs font-medium">{job.location || 'Remote'}</span>
+                        <div className="flex flex-col">
+                            <span className="text-[0.6rem] uppercase tracking-wider text-zinc-600 font-bold">Location</span>
+                            <span className="text-xs font-semibold text-zinc-300 line-clamp-1">{job.location || 'Remote'}</span>
+                        </div>
                     </div>
                     <div className="flex items-center gap-2 text-zinc-500">
-                        <div className="h-8 w-8 rounded-lg bg-zinc-900/50 flex items-center justify-center">
+                        <div className="h-8 w-8 rounded-lg bg-zinc-900/50 flex items-center justify-center text-emerald-500/50">
                             <DollarSign size={14} />
                         </div>
-                        <span className="text-xs font-medium">{job.salary || 'Competitive'}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-zinc-500 col-span-2 md:col-span-1">
-                        <div className="h-8 w-8 rounded-lg bg-zinc-900/50 flex items-center justify-center">
-                            <TrendingUp size={14} />
+                        <div className="flex flex-col">
+                            <span className="text-[0.6rem] uppercase tracking-wider text-zinc-600 font-bold">Salary</span>
+                            <span className="text-xs font-semibold text-zinc-300">{job.salary || 'Competitive'}</span>
                         </div>
-                        <span className="text-xs font-medium capitalize">{job.experienceLevel || 'All Levels'}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-zinc-500">
+                        <div className="h-8 w-8 rounded-lg bg-zinc-900/50 flex items-center justify-center text-blue-500/50">
+                            <Briefcase size={14} />
+                        </div>
+                        <div className="flex flex-col">
+                            <span className="text-[0.6rem] uppercase tracking-wider text-zinc-600 font-bold">Type</span>
+                            <span className="text-xs font-semibold text-zinc-300 capitalize">{job.employmentType || 'Full-time'}</span>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-2 text-zinc-500">
+                        <div className="h-8 w-8 rounded-lg bg-zinc-900/50 flex items-center justify-center text-purple-500/50">
+                            <Clock size={14} />
+                        </div>
+                        <div className="flex flex-col">
+                            <span className="text-[0.6rem] uppercase tracking-wider text-zinc-600 font-bold">Posted</span>
+                            <span className="text-xs font-semibold text-zinc-300">
+                                {job.postedAt ? new Intl.RelativeTimeFormat('en', { style: 'short' }).format(
+                                    Math.ceil((new Date(job.postedAt).getTime() - new Date().getTime()) / 86400000), 'day'
+                                ).replace('in ', '').replace(' ago', '') + ' ago' : 'Recently'}
+                            </span>
+                        </div>
                     </div>
                 </div>
 
-                <div className="mt-6 pt-6 border-t border-white/5 flex flex-wrap gap-2">
+                {job.description && (
+                    <div className="mt-4 text-zinc-500 text-xs line-clamp-2 leading-relaxed italic opacity-80 group-hover:opacity-100 transition-opacity">
+                        "{job.description.replace(/[#*`]/g, '').substring(0, 180)}..."
+                    </div>
+                )}
+
+                <div className="mt-4 pt-4 border-t border-white/5 flex flex-wrap gap-2">
                     {skills.slice(0, 5).map((skill: string) => (
                         <div 
                             key={skill} 

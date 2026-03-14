@@ -46,9 +46,9 @@ export async function GET(req: Request) {
             ];
         }
 
-        let orderBy: any = { postedAt: 'desc' };
+        let orderBy: any = [{ postedAt: 'desc' }, { id: 'asc' }];
         if (sortBy === 'salary') {
-            orderBy = { salaryMax: 'desc' };
+            orderBy = [{ salaryMax: 'desc' }, { id: 'asc' }];
         }
 
         const [results, total] = await Promise.all([

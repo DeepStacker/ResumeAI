@@ -20,6 +20,22 @@ interface JobFiltersSidebarProps {
     onApply: () => void;
 }
 
+const FIELDS = [
+    { id: 'software', label: 'Software Engineering' },
+    { id: 'data', label: 'Data & AI' },
+    { id: 'product', label: 'Product & Design' },
+    { id: 'marketing', label: 'Marketing & Sales' },
+    { id: 'finance', label: 'Finance & Ops' },
+];
+
+const DATE_OPTIONS = [
+    { id: 'all', label: 'Any Time' },
+    { id: '24h', label: 'Last 24 Hours' },
+    { id: '3d', label: 'Last 3 Days' },
+    { id: '7d', label: 'Last 7 Days' },
+    { id: '30d', label: 'Last 30 Days' },
+];
+
 export function JobFiltersSidebar({ filters, onFilterChange, onApply }: JobFiltersSidebarProps) {
     const handleLevelChange = (val: string) => {
         onFilterChange({ level: val === 'all' ? '' : val });
@@ -36,6 +52,16 @@ export function JobFiltersSidebar({ filters, onFilterChange, onApply }: JobFilte
         onApply();
     };
 
+    const handleFieldChange = (val: string) => {
+        onFilterChange({ field: val === 'all' ? '' : val });
+        onApply();
+    };
+
+    const handleDateChange = (val: string) => {
+        onFilterChange({ datePosted: val === 'all' ? '' : val });
+        onApply();
+    };
+
     return (
         <div className="w-full space-y-8 p-1">
             <div className="flex items-center justify-between mb-2">
@@ -43,10 +69,10 @@ export function JobFiltersSidebar({ filters, onFilterChange, onApply }: JobFilte
                     <Filter size={16} className="text-primary" />
                     <h3 className="text-xs font-black uppercase tracking-[0.2em] text-white">Filters</h3>
                 </div>
-                {(filters.level || filters.location || filters.type) && (
+                {(filters.level || filters.location || filters.type || filters.field || filters.datePosted || filters.salaryMin > 0) && (
                     <button 
                         onClick={() => {
-                            onFilterChange({ level: '', location: '', type: '' });
+                            onFilterChange({ level: '', location: '', type: '', field: '', datePosted: '', salaryMin: 0 });
                             onApply();
                         }}
                         className="text-[0.6rem] font-bold text-zinc-500 hover:text-white uppercase tracking-wider transition-colors"
@@ -71,6 +97,24 @@ export function JobFiltersSidebar({ filters, onFilterChange, onApply }: JobFilte
                         <SelectItem value="Mid">Mid Level</SelectItem>
                         <SelectItem value="Senior">Senior Level</SelectItem>
                         <SelectItem value="Lead">Lead / Management</SelectItem>
+                    </SelectContent>
+                </Select>
+            </div>
+
+            {/* Field / Department */}
+            <div className="space-y-3">
+                <label className="text-[0.65rem] font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-2">
+                    <Briefcase size={12} /> Domain
+                </label>
+                <Select value={filters.field || 'all'} onValueChange={handleFieldChange}>
+                    <SelectTrigger className="w-full bg-zinc-900/50 border-white/5 text-xs text-white h-11 rounded-xl focus:border-primary/50 transition-all">
+                        <SelectValue placeholder="All Fields" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-zinc-900 border-white/10 text-white">
+                        <SelectItem value="all">All Fields</SelectItem>
+                        {FIELDS.map(f => (
+                            <SelectItem key={f.id} value={f.id}>{f.label}</SelectItem>
+                        ))}
                     </SelectContent>
                 </Select>
             </div>
@@ -130,9 +174,11 @@ export function JobFiltersSidebar({ filters, onFilterChange, onApply }: JobFilte
                 <div className="grid grid-cols-2 gap-2">
                     {[
                         { val: 0, label: 'Any' },
-                        { val: 80000, label: '$80K+' },
-                        { val: 120000, label: '$120K+' },
+                        { val: 60000, label: '$60K+' },
+                        { val: 100000, label: '$100K+' },
+                        { val: 140000, label: '$140K+' },
                         { val: 180000, label: '$180K+' },
+                        { val: 220000, label: '$220K+' },
                     ].map((s) => (
                         <button
                             key={s.val}
@@ -150,6 +196,23 @@ export function JobFiltersSidebar({ filters, onFilterChange, onApply }: JobFilte
                         </button>
                     ))}
                 </div>
+            </div>
+
+            {/* Timeframe */}
+            <div className="space-y-3">
+                <label className="text-[0.65rem] font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-2">
+                    <Zap size={12} /> Recency
+                </label>
+                <Select value={filters.datePosted || 'all'} onValueChange={handleDateChange}>
+                    <SelectTrigger className="w-full bg-zinc-900/50 border-white/5 text-xs text-white h-11 rounded-xl focus:border-primary/50 transition-all">
+                        <SelectValue placeholder="Any Time" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-zinc-900 border-white/10 text-white">
+                        {DATE_OPTIONS.map(opt => (
+                            <SelectItem key={opt.id} value={opt.id}>{opt.label}</SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
             </div>
 
             {/* Smart Filters */}

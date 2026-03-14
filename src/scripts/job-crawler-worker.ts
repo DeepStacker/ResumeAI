@@ -4,6 +4,8 @@ import { updateMarketDemandStats } from '../lib/jobs/skill-gap';
 import { logger } from '../lib/logger';
 import { generateJobFingerprint } from '../lib/jobs/dedup';
 import { parserQueue } from '../lib/queue';
+import { AIOrchestrator } from '../lib/jobs/orchestrator';
+import { MaintenanceService } from '../lib/jobs/maintenance';
 
 const JINA_API_KEY = process.env.JINA_API;
 const FIRECRAWL_API_KEY = process.env.FIRECRAWL_API;
@@ -43,12 +45,15 @@ const JOB_ROLES = [
     'Database Administrator', 'Technical Writer', 'Scrum Master',
     'Sales Engineer', 'Account Executive', 'Customer Success Manager',
     'Social Media Manager', 'Content Strategist', 'SEO Specialist',
-    'Legal Counsel', 'HR Manager', 'Financial Analyst', 'Marketing Director',
-    'Internship', 'Graduate Engineer', 'Research Intern', 'Product Management Intern'
+    'Internship', 'Graduate Engineer', 'Research Intern', 'Product Management Intern',
+    'New Graduate', 'Batch of 2026', 'Fresher', 'Associate Software Engineer',
+    'Graduate Engineer Trainee', 'Junior Developer'
 ];
 
 const SENIORITIES = [
-    'Junior', 'Entry Level', 'Mid-Level', 'Senior', 'Staff', 'Principal', 'Lead', 'Executive', 'Intern', 'Student'
+    'Intern', 'Student', 'Entry Level', 'Junior', 'Associate',
+    'Senior', 'Staff', 'Principal', 'Fresh Graduate', 'New Grad',
+    'Batch of 2026', 'Batch of 2025'
 ];
 
 const EMPLOYMENT_TYPES = [
@@ -150,7 +155,27 @@ async function expandHubJobs(url: string): Promise<string[]> {
 async function processJobUrl(targetUrl: string, sourceTitle: string, sourceCompany?: string): Promise<boolean> {
     try {
         const markdown = await getMarkdownWithJina(targetUrl);
-        if (!markdown || markdown.length < 1000) return false;
+        if (!markdown || markdown.length < 500) return false;
+
+        // --- REGEX ENHANCEMENT ---
+        let finalTitle = sourceTitle;
+        let finalCompany = sourceCompany;
+
+        if (!finalTitle || finalTitle.includes('Jobs') || finalTitle.includes('Careers') || finalTitle === 'Unknown Role') {
+            const titleMatch = markdown.match(/^#\s+(.+)$/m) || markdown.match(/^(.+)\n={3,}/m);
+            if (titleMatch) {
+                finalTitle = titleMatch[1].trim();
+                logger.info(`Worker: Regex extracted title: ${finalTitle}`);
+            }
+        }
+
+        if (!finalCompany || finalCompany === 'Scraped Company' || finalCompany === 'Unknown Company') {
+            const companyMatch = markdown.match(/About\s+([A-Z][a-zA-Z0-9\s&]+)/i);
+            if (companyMatch) {
+                finalCompany = companyMatch[1].trim();
+                logger.info(`Worker: Regex extracted company: ${finalCompany}`);
+            }
+        }
 
         const lowerMarkdown = markdown.toLowerCase();
         const jobMarkers = ['requirement', 'responsibility', 'qualification', 'benefit', 'about the role', 'apply now', 'submit application', 'compensation', 'salary range'];
@@ -213,7 +238,7 @@ async function processJobUrl(targetUrl: string, sourceTitle: string, sourceCompa
         });
 
         await parserQueue.add('parse-job', { jobId: resResult.id });
-        logger.info(`Worker: Ingested detailed job: ${sourceTitle} at ${sourceCompany || 'Scraped Company'}`);
+        logger.info(`Worker: Ingested detailed job: ${finalTitle} at ${finalCompany || 'Scraped Company'}`);
         return true;
     } catch (err) {
         logger.error(`Worker: Failed to process job URL ${targetUrl}`, err);
@@ -441,118 +466,127 @@ async function runCrawlCycle() {
     }
 
     const selectedSites = dbSites.map((s: any) => ({ site: s.domain, label: s.label }));
-    const selectedRoles = [...new Set([...JOB_ROLES.sort(() => 0.5 - Math.random()).slice(0, 5)])];
-    const selectedSeniorities = [...new Set([...SENIORITIES.sort(() => 0.5 - Math.random()).slice(0, 3)])];
-    const selectedTypes = [...new Set([...EMPLOYMENT_TYPES.sort(() => 0.5 - Math.random()).slice(0, 2)])];
-
     const portalTasks: (() => Promise<void>)[] = [];
 
-    // 1.5 Discovery Phase (Find NEW companies and explore sources)
-    if (discoveryMode) {
-        logger.info('Worker: Entering Autonomous Discovery Phase...');
-        const discoveryQueries = [
-            'top companies hiring remote interns 2026',
-            'venture backed tech startups with remote jobs careers',
-            'top engineering career pages 2026 list',
-            'fastest growing AI startups careers portal',
-            'remote healthcare tech career pages',
-            'internships 2026 tech software engineering'
-        ];
-        const discoQuery = discoveryQueries[Math.floor(Math.random() * discoveryQueries.length)];
-        const discoResults = await scrapeWithFirecrawl(discoQuery, 20);
-        
-        for (const res of discoResults) {
-            const url = res.url || res.link;
-            if (!url) continue;
+    // --- AI ORCHESTRATION LAYER ---
+    let strategy = null;
+    try {
+        logger.info('Worker: Planning cycle strategy with AI Orchestrator...');
+        strategy = await AIOrchestrator.planSearchStrategy();
+        if (strategy && strategy.queries.length > 0) {
+            logger.info(`Worker: AI Strategist generated ${strategy.queries.length} precision queries.`);
+        }
+    } catch (err) {
+        logger.warn('Worker: AI Strategist failed, falling back to database rotation');
+    }
 
-            const isKnownPortal = url.includes('lever.co') || url.includes('greenhouse.io') || url.includes('workable.com') || url.includes('careers') || url.includes('jobs');
-            
-            if (isKnownPortal) {
-                try {
-                    const hostname = new URL(url).hostname;
-                    const domain = hostname.replace(/^www\./, '');
-                    
-                    if (domain.length > 5 && !domain.includes('google') && !domain.includes('linkedin')) {
-                        const site = await (prisma as any).careerSite.upsert({
+    const queriesToRun = strategy?.queries?.length ? strategy.queries : [];
+    
+    // If AI fails or returns nothing, fall back to DB-driven rotation
+    if (queriesToRun.length === 0) {
+        const selectedRoles = [...new Set([...JOB_ROLES.sort(() => 0.5 - Math.random()).slice(0, 5)])];
+        const selectedSeniorities = [...new Set([...SENIORITIES.sort(() => 0.5 - Math.random()).slice(0, 3)])];
+        const selectedTypes = [...new Set([...EMPLOYMENT_TYPES.sort(() => 0.5 - Math.random()).slice(0, 2)])];
+        
+        for (const role of selectedRoles) {
+            for (const level of selectedSeniorities) {
+                for (const type of selectedTypes) {
+                    for (const target of selectedSites) {
+                        queriesToRun.push(`site:${target.site} "Remote" "${level}" "${role}" "${type}" jobs "last 24 hours" OR "just posted"`);
+                    }
+                }
+            }
+        }
+    }
+
+    // Limit queries per cycle to avoid API exhaustion
+    const activeQueries = queriesToRun.slice(0, 20);
+    logger.info(`Worker: Running ${activeQueries.length} search queries...`);
+
+    for (const query of activeQueries) {
+        const portalResults = await scrapeWithFirecrawl(query, 10);
+        
+        // 1.5 Discovery Phase (AI-Driven)
+        try {
+            const discovered = await AIOrchestrator.discoverCareerHubs(portalResults);
+            for (const disco of discovered) {
+                const domain = disco.domain.replace(/^www\./, '');
+                await (prisma as any).careerSite.upsert({
+                    where: { domain },
+                    update: { updatedAt: new Date() },
+                    create: {
+                        domain,
+                        url: disco.url,
+                        label: disco.label,
+                        source: 'discovery_ai',
+                        trustScore: 0.7
+                    }
+                });
+                logger.info(`Worker: AI discovered new portal: ${domain} (${disco.reasoning})`);
+            }
+        } catch (err) {
+            // Manual fallback discovery logic
+            if (discoveryMode) {
+                for (const res of portalResults) {
+                    const url = res.url || res.link;
+                    if (url && (url.includes('lever.co') || url.includes('greenhouse.io') || url.includes('workable.com') || url.includes('careers'))) {
+                        const domain = new URL(url).hostname.replace(/^www\./, '');
+                        await (prisma as any).careerSite.upsert({
                             where: { domain },
                             update: { updatedAt: new Date() },
                             create: {
                                 domain,
                                 url,
                                 label: res.title || domain,
-                                source: 'discovery',
+                                source: 'discovery_manual',
                                 trustScore: 0.6
                             }
                         });
-                        logger.info(`Worker: Discovered and ADDED new career portal: ${domain}`);
-                        
-                        // Add to current cycle if it's new and we have space
-                        if (selectedSites.length < 15) {
-                            selectedSites.push({ site: domain, label: res.title });
-                        }
                     }
-                } catch (e) {
-                    // skip malformed URLs
                 }
             }
         }
-    }
 
-    // 2. Scrape Job Portals via Firecrawl with site-specific rotation
-    logger.info('Worker: Searching portals via Firecrawl with platform rotation...');
-    
-    for (const role of selectedRoles) {
-        for (const level of selectedSeniorities) {
-            for (const type of selectedTypes) {
-                for (const target of selectedSites) {
-                    // Inclusion of "Remote" and freshness markers ensures we find relevant, active jobs
-                    const query = `site:${target.site} "Remote" "${level}" "${role}" "${type}" jobs "last 24 hours" OR "just posted"`;
-                    logger.info(`Worker: Executing specialized fresh search: ${query}`);
-                    
-                    const portalResults = await scrapeWithFirecrawl(query, 15);
-                    for (const res of portalResults) {
-                        portalTasks.push(async () => {
-                            const targetUrl = res.url || res.link;
-                            if (!targetUrl) return;
+        // 2. Filter & Process Results (AI-Driven)
+        let evaluations: any[] = [];
+        try {
+            evaluations = await AIOrchestrator.evaluateUrls(portalResults.map((r: any) => ({ url: r.url || r.link, title: r.title })));
+        } catch (err) {
+            // Fallback: assume everything might be a job
+            evaluations = portalResults.map((r: any) => ({ url: r.url || r.link, category: 'job_desc' }));
+        }
 
-                            const title = (res.title || '').toLowerCase();
-                            // Improved Hub Detection: Match numbers, "Jobs in", "Top", etc.
-                            const isHub = title.match(/\b\d+\b/) || 
-                                         title.includes('jobs in') || 
-                                         title.includes('top ') || 
-                                         title.includes('best ') ||
-                                         title.includes('hiring now') ||
-                                         title.includes('search results');
+        for (const res of portalResults) {
+            const targetUrl = res.url || res.link;
+            if (!targetUrl) continue;
 
-                            if (isHub && !targetUrl.match(/(lever\.co|greenhouse\.io|workable\.com)/)) {
-                                logger.info(`Worker: HUB DETECTED: ${res.title}. Expanding...`);
-                                const children = await expandHubJobs(targetUrl);
-                                logger.info(`Worker: Expanded hub ${targetUrl} into ${children.length} job links.`);
-                                
-                                for (const childUrl of children) {
-                                    if (await processJobUrl(childUrl, res.title.replace(/\d+\s+/, ''), res.company)) {
-                                        totalIngested++;
-                                    }
-                                }
-                                return;
-                            }
+            const evaluation = evaluations.find(e => e.url === targetUrl);
+            const category = evaluation?.category || 'job_desc';
 
-                            if (await processJobUrl(targetUrl, res.title, res.company)) {
-                                totalIngested++;
-                            }
-                        });
-                    }
-                    
-                    // Update lastScraped for this site
-                    const domainMatch = dbSites.find((s: any) => s.domain === target.site);
-                    if (domainMatch) {
-                        await (prisma as any).careerSite.update({
-                            where: { id: domainMatch.id },
-                            data: { lastScraped: new Date() }
-                        });
-                    }
-                }
+            if (category === 'other' || category === 'article') {
+                logger.info(`Worker: AI filtered out irrelevant page: ${targetUrl}`);
+                continue;
             }
+
+            portalTasks.push(async () => {
+                const titleLower = (res.title || '').toLowerCase();
+                const isHub = category === 'hub' || titleLower.match(/\b\d+\b/) || titleLower.includes('jobs in');
+
+                if (isHub && !targetUrl.match(/(lever\.co|greenhouse\.io|workable\.com)/)) {
+                    logger.info(`Worker: HUB DETECTED: ${res.title}. Expanding...`);
+                    const children = await expandHubJobs(targetUrl);
+                    for (const childUrl of children) {
+                        if (await processJobUrl(childUrl, res.title.replace(/\d+\s+/, ''), res.company)) {
+                            totalIngested++;
+                        }
+                    }
+                    return;
+                }
+
+                if (await processJobUrl(targetUrl, res.title, res.company)) {
+                    totalIngested++;
+                }
+            });
         }
     }
 
@@ -570,6 +604,32 @@ async function runCrawlCycle() {
     logger.info(`--- Worker: Cycle complete. Successfully ingested/updated ${totalIngested} jobs. ---`);
 }
 
+async function autonomousCleanup() {
+    try {
+        logger.info('Worker: Running autonomous cleanup for "Unknown" jobs...');
+        const unknownJobs = await (prisma as any).jobPosting.findMany({
+            where: {
+                OR: [
+                    { title: 'Unknown Role' },
+                    { company: 'Unknown Company' },
+                    { title: { contains: 'Unknown', mode: 'insensitive' } }
+                ],
+                isActive: true
+            },
+            take: 20
+        });
+
+        if (unknownJobs.length === 0) return;
+
+        logger.info(`Worker: Found ${unknownJobs.length} unknown jobs. Re-queueing for AI parsing...`);
+        for (const job of unknownJobs) {
+            await parserQueue.add('parse-job', { jobId: job.id });
+        }
+    } catch (err) {
+        logger.error('Worker: Autonomous cleanup failed', err);
+    }
+}
+
 // -------------------------------------------------------------
 // MAIN WORKER LOOP
 // -------------------------------------------------------------
@@ -581,13 +641,24 @@ async function startWorker() {
     logger.info('🤖 Starting Background Job Crawler Worker');
     logger.info(`Configuration: Concurrency=5(API), 3(Scrape), Interval=${CRAWL_INTERVAL_MS/60000}m, Mode=${cycleOnce ? 'One-time' : 'Continuous'}`);
     
+    let cycleCount = 0;
+
     do {
         try {
             const startTime = Date.now();
             await runCrawlCycle();
+            await autonomousCleanup();
             const duration = (Date.now() - startTime) / 1000;
             logger.info(`Worker: Cycle finished in ${duration.toFixed(1)}s`);
             
+            cycleCount++;
+            
+            // Periodically (every hour/12 cycles) update the Knowledge Base
+            if (cycleCount % 12 === 0) {
+                logger.info('Worker: Periodic Maintenance Triggered...');
+                await MaintenanceService.updateKnowledgeBase();
+            }
+
             if (cycleOnce) {
                 logger.info('Worker: --cycle-once detected. Powering down...');
                 break;

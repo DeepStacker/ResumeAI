@@ -107,8 +107,11 @@ export const useJobStore = create<JobState>()((set, get) => ({
             const res = await fetch(`/api/jobs/search?${params}`);
             const data = await res.json();
             if (res.ok) {
+                // Ensure unique jobs even on initial fetch (though unlikely to have duplicates here)
+                const uniqueJobs = Array.from(new Map(data.jobs.map((j: any) => [j.id, j])).values()) as JobListItem[];
+                
                 set({ 
-                    jobs: data.jobs, 
+                    jobs: uniqueJobs, 
                     pagination: { 
                         page: 1, 
                         total: data.count, 
@@ -144,8 +147,12 @@ export const useJobStore = create<JobState>()((set, get) => ({
             const res = await fetch(`/api/jobs/search?${params}`);
             const data = await res.json();
             if (res.ok) {
+                // Deduplicate incoming jobs by ID before merging with existing ones
+                const allJobs = [...jobs, ...data.jobs];
+                const uniqueJobs = Array.from(new Map(allJobs.map((j: any) => [j.id, j])).values()) as JobListItem[];
+
                 set({ 
-                    jobs: [...jobs, ...data.jobs], 
+                    jobs: uniqueJobs, 
                     pagination: { 
                         page: nextPage, 
                         total: data.count, 

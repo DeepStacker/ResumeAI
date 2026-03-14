@@ -21,15 +21,29 @@ export const parserWorker = createWorker('parser-queue', async (job: any) => {
         // 1. Call LLM Parser
         const rawJson = await parseJobDescription(jobPosting.description);
         
-        // 2. Validate with Zod
+        // 2. Validate with Zod (but be resilient)
         const validated = JobDataSchema.safeParse(rawJson);
+        const data = validated.success ? validated.data : rawJson;
+
         if (!validated.success) {
-            logger.error(`ParserWorker: Validation failed for job ${jobId}`, validated.error);
-            // Even if AI fails partially, we can log and move on, or try fallback
-            return;
+            logger.warn(`ParserWorker: Validation partial match for job ${jobId}. Using raw data.`, validated.error);
         }
 
-        const data = validated.data;
+        // Ensure we at least have a title if possible
+        if (!data.title || data.title === 'Unknown Role' || data.title.includes('Unknown')) {
+            data.title = (jobPosting.title === 'Unknown Role' || jobPosting.title.includes('Unknown')) ? 'Job Opportunity' : jobPosting.title;
+        }
+        if (!data.company || data.company === 'Unknown Company' || data.company.includes('Unknown')) {
+            data.company = (jobPosting.company === 'Unknown Company' || jobPosting.company.includes('Unknown')) ? 'Careers Portal' : jobPosting.company;
+        }
+
+        // If even after parsing it's still extremely poor quality, mark as inactive
+        const isBadData = (!data.title || data.title === 'Job Opportunity') && 
+                         (!data.company || data.company === 'Careers Portal');
+        
+        if (isBadData) {
+            logger.warn(`ParserWorker: Marking job ${jobId} as inactive due to persistent poor data quality.`);
+        }
 
         // Helper to parse relative or ISO dates
         const parseDate = (dateStr: string | null | undefined): Date | null => {
@@ -53,8 +67,8 @@ export const parserWorker = createWorker('parser-queue', async (job: any) => {
         await (prisma as any).jobPosting.update({
             where: { id: jobId },
             data: {
-                title: data.title || jobPosting.title,
-                company: data.company || jobPosting.company,
+                title: data.title,
+                company: data.company,
                 location: data.location || jobPosting.location,
                 skills: data.skills as any,
                 salary: data.salary,
@@ -63,7 +77,7 @@ export const parserWorker = createWorker('parser-queue', async (job: any) => {
                 experienceLevel: data.experienceLevel ?? jobPosting.experienceLevel ?? 'Mid',
                 employmentType: data.employmentType ?? jobPosting.employmentType ?? 'Full-time',
                 postedAt: parseDate(data.postedAt) || jobPosting.postedAt,
-                isActive: data.isClosed ? false : jobPosting.isActive,
+                isActive: isBadData ? false : (data.isClosed ? false : jobPosting.isActive),
                 updatedAt: new Date(),
             }
         });

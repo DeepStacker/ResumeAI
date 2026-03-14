@@ -9,8 +9,8 @@ Current Date: ${currentDate}
 
 Return ONLY a JSON object with this schema:
 {
-  "title": "Job Title",
-  "company": "Company Name",
+  "title": "Job Title (CRITICAL: Be aggressive, look for headers)",
+  "company": "Company Name (Look for 'About [Company]' or headers)",
   "location": "City, Country or Remote",
   "skills": ["Skill1", "Skill2"],
   "salary": "Salary string or range",
@@ -19,11 +19,11 @@ Return ONLY a JSON object with this schema:
   "experienceLevel": "Junior" | "Entry" | "Mid" | "Senior" | "Lead" | "Executive",
   "employmentType": "Full-time" | "Part-time" | "Contract" | "Internship",
   "postedAt": "YYYY-MM-DD or relative description like '2 days ago'",
-  "isClosed": boolean (true if the text mentions job is closed, filled, or no longer accepting applications)
+  "isClosed": boolean
 }
 
-Job Description:
-${content.substring(0, 6000)}`;
+Job Description (HTML stripped for clarity):
+${content.replace(/<[^>]*>?/gm, '').substring(0, 7000)}`;
 
         const result = await callAI({
             messages: [
@@ -51,13 +51,14 @@ ${content.substring(0, 6000)}`;
         return JSON.parse(text);
     } catch (err) {
         logger.error('Failed to parse job description with AI', err);
-        // Fallback
+        // Fallback: Try to get something meaningful from the content
+        const snippet = content.substring(0, 100).replace(/[#*`\n]/g, ' ').trim();
         return {
-            title: 'Unknown Role',
-            company: 'Unknown Company',
+            title: snippet || 'Job Opportunity',
+            company: 'Careers Portal',
             location: 'Remote',
             skills: [],
-            salary: 'Unknown',
+            salary: 'Competitive',
             salaryMin: null,
             salaryMax: null,
             experienceLevel: 'Mid',

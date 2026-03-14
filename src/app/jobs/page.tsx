@@ -7,6 +7,7 @@ import {
     Filter, Zap, Plus, ExternalLink, Calendar, Globe, Building2,
     LayoutGrid, List, SlidersHorizontal
 } from 'lucide-react';
+import { useInView } from 'react-intersection-observer';
 import { useSession } from 'next-auth/react';
 import { useJobStore } from '@/store/useJobStore';
 import { JobCard } from '@/components/jobs/JobCard';
@@ -71,9 +72,9 @@ export default function JobsPage() {
                 <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-violet-500/5 rounded-full blur-[120px]" />
             </div>
 
-            <div className="container mx-auto max-w-7xl pt-32 pb-20 px-4 md:px-8 relative z-10">
-                {/* Header Section */}
-                <div className="flex flex-col gap-8 mb-12">
+            <div className="container mx-auto max-w-[1600px] pt-32 pb-20 px-4 md:px-12 relative z-10">
+                {/* Header Section - STICKY */}
+                <div className="sticky top-0 pt-12 pb-8 bg-[#050505]/80 backdrop-blur-md z-40 -mt-12 mb-4">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                         <div>
                             <div className="flex items-center gap-2 mb-3">
@@ -120,8 +121,8 @@ export default function JobsPage() {
                         <div className="flex flex-col lg:flex-row gap-8">
                             {/* Filter Sidebar */}
                             <aside className={`lg:w-80 shrink-0 transition-all duration-500 ${isFilterOpen ? 'opacity-100' : 'hidden lg:block opacity-50'}`}>
-                                <div className="sticky top-32">
-                                    <div className="bg-zinc-900/30 border border-white/5 rounded-3xl p-6 backdrop-blur-2xl">
+                                <div className="sticky top-44">
+                                    <div className="bg-zinc-900/30 border border-white/5 rounded-3xl p-6 backdrop-blur-2xl max-h-[calc(100vh-12rem)] overflow-y-auto custom-scrollbar">
                                         <JobFiltersSidebar 
                                             filters={filters} 
                                             onFilterChange={setFilters} 
@@ -190,25 +191,27 @@ function BrowseTab({ jobs, isLoading, onSearch }: { jobs: any[], isLoading: bool
 
     return (
         <div className="space-y-10">
-            {/* Search Bar Area */}
-            <div className="relative group">
-                <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 to-violet-500/10 rounded-[2.5rem] blur-xl opacity-0 group-focus-within:opacity-100 transition duration-500" />
-                <div className="relative flex items-center bg-zinc-900/40 border border-white/5 rounded-[2rem] p-2 backdrop-blur-3xl group-focus-within:border-primary/50 transition-all duration-500">
-                    <div className="flex items-center justify-center h-14 w-14 shrink-0">
-                        <Search className="text-zinc-500 group-focus-within:text-primary transition-colors" size={20} />
-                    </div>
-                    <input 
-                        type="text" 
-                        value={localSearch}
-                        placeholder="Search by role, company name, or technology stack..."
-                        className="flex-1 bg-transparent border-none py-4 text-white placeholder:text-zinc-600 focus:outline-none focus:ring-0 text-sm font-medium pr-6"
-                        onChange={(e) => setLocalSearch(e.target.value)}
-                    />
-                    {isLoading && (
-                        <div className="absolute right-6 top-1/2 -translate-y-1/2">
-                            <Loader2 size={18} className="animate-spin text-primary" />
+            {/* Search Bar Area - STICKY */}
+            <div className="sticky top-44 z-30 pb-4 bg-[#050505]/50 backdrop-blur-sm -mx-2 px-2">
+                <div className="relative group">
+                    <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 to-violet-500/10 rounded-[2.5rem] blur-xl opacity-0 group-focus-within:opacity-100 transition duration-500" />
+                    <div className="relative flex items-center bg-zinc-900/60 border border-white/10 rounded-[2rem] p-2 backdrop-blur-3xl group-focus-within:border-primary/50 transition-all duration-500">
+                        <div className="flex items-center justify-center h-14 w-14 shrink-0">
+                            <Search className="text-zinc-500 group-focus-within:text-primary transition-colors" size={20} />
                         </div>
-                    )}
+                        <input 
+                            type="text" 
+                            value={localSearch}
+                            placeholder="Search by role, company name, or technology stack..."
+                            className="flex-1 bg-transparent border-none py-4 text-white placeholder:text-zinc-600 focus:outline-none focus:ring-0 text-sm font-medium pr-6"
+                            onChange={(e) => setLocalSearch(e.target.value)}
+                        />
+                        {isLoading && (
+                            <div className="absolute right-6 top-1/2 -translate-y-1/2">
+                                <Loader2 size={18} className="animate-spin text-primary" />
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
 
@@ -245,8 +248,8 @@ function BrowseTab({ jobs, isLoading, onSearch }: { jobs: any[], isLoading: bool
                             </Button>
                         </div>
                     ) : (
-                        <>
-                             <div className="flex items-center justify-between mb-2">
+                        <div className="space-y-6">
+                            <div className="flex items-center justify-between mb-2">
                                 <div className="flex items-center gap-2">
                                     <Badge variant="outline" className="bg-primary/5 text-primary border-primary/10 px-3 py-1 text-[0.6rem] font-black uppercase">
                                         {jobs.length} Opportunities Found
@@ -304,7 +307,7 @@ function BrowseTab({ jobs, isLoading, onSearch }: { jobs: any[], isLoading: bool
                                 
                                 <InfiniteScrollWatcher />
                             </div>
-                        </>
+                        </div>
                     )}
                 </div>
             )}
@@ -314,7 +317,7 @@ function BrowseTab({ jobs, isLoading, onSearch }: { jobs: any[], isLoading: bool
 
 function InfiniteScrollWatcher() {
     const { pagination, loadMoreJobs, isLoadingJobs } = useJobStore();
-    const { ref, inView } = require('react-intersection-observer').useInView({
+    const { ref, inView } = useInView({
         threshold: 0,
         triggerOnce: false
     });
